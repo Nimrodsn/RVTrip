@@ -310,15 +310,9 @@ function useOsrmRoute(locations: ItineraryLocation[]): number[][] | null {
     if (locations.length < 2) { setRoute(null); return; }
     const coords = locations.map((l) => `${l.coords.lng},${l.coords.lat}`).join(';');
     const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
-    // #region agent log
-    fetch('http://127.0.0.1:7360/ingest/93b0041c-35fc-48e1-a260-58e25d622502',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'a17346'},body:JSON.stringify({sessionId:'a17346',location:'map.tsx:useOsrmRoute',message:'Fetching OSRM route',data:{locCount:locations.length,url:url.slice(0,120)},timestamp:Date.now(),hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
     fetch(url)
       .then((r) => r.json())
       .then((data) => {
-        // #region agent log
-        fetch('http://127.0.0.1:7360/ingest/93b0041c-35fc-48e1-a260-58e25d622502',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'a17346'},body:JSON.stringify({sessionId:'a17346',location:'map.tsx:useOsrmRoute:response',message:'OSRM response received',data:{code:data.code,routeCount:data.routes?.length,pointCount:data.routes?.[0]?.geometry?.coordinates?.length},timestamp:Date.now(),hypothesisId:'E'})}).catch(()=>{});
-        // #endregion
         if (data.code === 'Ok' && data.routes?.[0]) {
           setRoute(data.routes[0].geometry.coordinates);
         }

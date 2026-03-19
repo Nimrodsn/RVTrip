@@ -36,6 +36,8 @@ module.exports = ({ config }) => ({
     plugins: ['expo-router'],
     extra: {
       googleMapsApiKey: process.env.MAPS_API_KEY || '',
+      supabaseUrl: process.env.SUPABASE_URL || '',
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
     },
   },
 });
