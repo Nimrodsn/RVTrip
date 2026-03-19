@@ -93,8 +93,8 @@ export default function MapView({ customStops = [] }: Props) {
       </div>
 
       {/* Map + Sidebar */}
-      <div className="flex flex-1 min-h-0">
-        <div className="flex-1 relative">
+      <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+        <div className="flex-1 relative min-h-[300px]">
           <iframe
             ref={iframeRef}
             srcDoc={html}
@@ -104,7 +104,7 @@ export default function MapView({ customStops = [] }: Props) {
         </div>
 
         {/* Location List */}
-        <div className="w-80 bg-white border-r border-gray-100 overflow-auto">
+        <div className="w-full lg:w-80 bg-white border-r border-gray-100 overflow-auto max-h-[50vh] lg:max-h-none">
           <div className="p-4">
             <h3 className="font-bold text-primary mb-3">{strings.map.itinerary}</h3>
             <div className="space-y-2">
