@@ -37,7 +37,7 @@ create table if not exists documents (
   storage_path text not null,
   mime_type text not null default '',
   size bigint,
-  category text not null check (category in ('flight', 'insurance', 'reservation', 'rental', 'id', 'other')),
+  category text not null check (category in ('flight', 'insurance', 'reservation', 'rental', 'passport', 'license', 'other')),
   note text not null default '',
   timestamp bigint not null,
   created_at timestamptz not null default now()

@@ -10,7 +10,8 @@ const DOC_CATEGORIES: { key: DocCategory; label: string; emoji: string }[] = [
   { key: 'insurance', label: strings.documents.insurance, emoji: '🛡️' },
   { key: 'reservation', label: strings.documents.reservation, emoji: '🏨' },
   { key: 'rental', label: strings.documents.rental, emoji: '🚐' },
-  { key: 'id', label: strings.documents.id, emoji: '🪪' },
+  { key: 'passport', label: strings.documents.passport, emoji: '🛂' },
+  { key: 'license', label: strings.documents.license, emoji: '🪪' },
   { key: 'other', label: strings.documents.other, emoji: '📄' },
 ];
 

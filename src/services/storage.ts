@@ -148,7 +148,7 @@ export async function savePhotos(photos: PhotoEntry[]): Promise<void> {
 
 // --- Documents ---
 
-export type DocCategory = 'flight' | 'insurance' | 'reservation' | 'rental' | 'id' | 'other';
+export type DocCategory = 'flight' | 'insurance' | 'reservation' | 'rental' | 'passport' | 'license' | 'other';
 
 export interface DocEntry {
   id: string;

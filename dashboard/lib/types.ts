@@ -45,7 +45,7 @@ export interface PhotoEntry {
   note: string;
 }
 
-export type DocCategory = 'flight' | 'insurance' | 'reservation' | 'rental' | 'id' | 'other';
+export type DocCategory = 'flight' | 'insurance' | 'reservation' | 'rental' | 'passport' | 'license' | 'other';
 
 export interface DocEntry {
   id: string;
