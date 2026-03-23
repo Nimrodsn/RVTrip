@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { itinerary, days } from '@/lib/itinerary';
 import { TYPE_COLORS, TYPE_EMOJI, type LocationType, type ItineraryLocation } from '@/lib/types';
 import { strings } from '@/lib/strings';
@@ -11,23 +11,41 @@ const TYPE_LABELS: Record<LocationType, string> = {
   supply: strings.map.supply,
 };
 
+type CustomStopRow = {
+  id: string;
+  day: number;
+  name: string;
+  type: LocationType;
+  lat: number;
+  lng: number;
+  note: string;
+};
+
 interface Props {
-  customStops?: Array<{
-    id: string;
-    day: number;
-    name: string;
-    type: LocationType;
-    lat: number;
-    lng: number;
-    note: string;
-  }>;
+  customStops?: CustomStopRow[];
+  editMode?: boolean;
+  onMapClick?: (lat: number, lng: number) => void;
 }
 
-export default function MapView({ customStops = [] }: Props) {
+export default function MapView({ customStops = [], editMode = false, onMapClick }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [filterDay, setFilterDay] = useState<number | null>(null);
   const [filterType, setFilterType] = useState<LocationType | null>(null);
   const [selected, setSelected] = useState<ItineraryLocation | null>(null);
+
+  const handleMessage = useCallback(
+    (e: MessageEvent) => {
+      if (e.data?.type === 'map-click' && editMode && onMapClick) {
+        onMapClick(e.data.lat, e.data.lng);
+      }
+    },
+    [editMode, onMapClick]
+  );
+
+  useEffect(() => {
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [handleMessage]);
 
   const filtered = itinerary.locations.filter((loc) => {
     if (filterDay !== null && loc.day !== filterDay) return false;
@@ -35,13 +53,12 @@ export default function MapView({ customStops = [] }: Props) {
     return true;
   });
 
-  const html = buildFullMapHtml(filtered, customStops);
+  const html = buildFullMapHtml(filtered, customStops, editMode);
 
   return (
     <div className="flex flex-col h-full">
       {/* Filter Bar */}
       <div className="flex flex-wrap gap-3 p-4 bg-white border-b border-gray-100">
-        {/* Day filter */}
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-gray-500">{strings.map.filterByDay}:</span>
           <button
@@ -64,8 +81,6 @@ export default function MapView({ customStops = [] }: Props) {
             </button>
           ))}
         </div>
-
-        {/* Type filter */}
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-gray-500">{strings.map.filterByType}:</span>
           <button
@@ -80,7 +95,7 @@ export default function MapView({ customStops = [] }: Props) {
             <button
               key={t}
               onClick={() => setFilterType(t)}
-              className={`px-3 py-1 text-xs rounded-full font-medium transition-colors`}
+              className="px-3 py-1 text-xs rounded-full font-medium transition-colors"
               style={{
                 backgroundColor: filterType === t ? TYPE_COLORS[t].dot : TYPE_COLORS[t].bg,
                 color: filterType === t ? '#fff' : TYPE_COLORS[t].text,
@@ -92,9 +107,16 @@ export default function MapView({ customStops = [] }: Props) {
         </div>
       </div>
 
+      {/* Edit mode banner */}
+      {editMode && (
+        <div className="bg-green-50 border-b border-green-200 px-4 py-2 text-center text-sm font-semibold text-green-800">
+          📍 לחץ על המפה לבחירת מיקום לתחנה חדשה
+        </div>
+      )}
+
       {/* Map + Sidebar */}
       <div className="flex flex-col lg:flex-row flex-1 min-h-0">
-        <div className="flex-1 relative min-h-[300px]">
+        <div className={`flex-1 relative min-h-[300px] ${editMode ? 'ring-2 ring-green-400 ring-inset' : ''}`}>
           <iframe
             ref={iframeRef}
             srcDoc={html}
@@ -103,7 +125,6 @@ export default function MapView({ customStops = [] }: Props) {
           />
         </div>
 
-        {/* Location List */}
         <div className="w-full lg:w-80 bg-white border-r border-gray-100 overflow-auto max-h-[50vh] lg:max-h-none">
           <div className="p-4">
             <h3 className="font-bold text-primary mb-3">{strings.map.itinerary}</h3>
@@ -153,6 +174,26 @@ export default function MapView({ customStops = [] }: Props) {
                   </div>
                 </button>
               ))}
+
+              {/* Custom stops in sidebar */}
+              {customStops.map((s) => (
+                <div
+                  key={s.id}
+                  className="p-3 rounded-lg border-2 border-dashed border-yellow-300 bg-yellow-50/50"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span
+                      className="w-6 h-6 rounded-full text-white text-xs font-bold flex items-center justify-center"
+                      style={{ backgroundColor: TYPE_COLORS[s.type]?.dot || '#888' }}
+                    >
+                      {s.day}
+                    </span>
+                    <span className="text-sm font-semibold text-primary truncate">{s.name}</span>
+                    <span className="text-xs text-yellow-600 font-medium">({strings.map.custom})</span>
+                  </div>
+                  <p className="text-xs text-gray-500 line-clamp-2">{s.note}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -163,10 +204,11 @@ export default function MapView({ customStops = [] }: Props) {
 
 function buildFullMapHtml(
   locations: ItineraryLocation[],
-  customStops: Props['customStops'] = []
+  customStops: CustomStopRow[] = [],
+  editMode: boolean = false,
 ): string {
   const markers = locations
-    .map((loc, i) => {
+    .map((loc) => {
       const c = TYPE_COLORS[loc.type];
       return `L.circleMarker([${loc.coords.lat}, ${loc.coords.lng}], {
         radius: 9, fillColor: '${c.dot}', color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.9
@@ -174,7 +216,7 @@ function buildFullMapHtml(
     })
     .join('\n');
 
-  const customMarkers = (customStops ?? [])
+  const customMarkers = customStops
     .map((s) => {
       const c = TYPE_COLORS[s.type as LocationType] || TYPE_COLORS.supply;
       return `L.circleMarker([${s.lat}, ${s.lng}], {
@@ -184,9 +226,21 @@ function buildFullMapHtml(
     .join('\n');
 
   const polyCoords = locations.map((l) => `[${l.coords.lat}, ${l.coords.lng}]`).join(',');
-
   const routeCoords = locations.map((l) => `${l.coords.lng},${l.coords.lat}`).join(';');
   const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${routeCoords}?overview=full&geometries=geojson`;
+
+  const clickHandler = editMode
+    ? `
+var pendingMarker=null;
+map.on('click',function(e){
+  if(pendingMarker){map.removeLayer(pendingMarker);}
+  pendingMarker=L.marker([e.latlng.lat,e.latlng.lng],{
+    icon:L.divIcon({className:'',html:'<div style="width:20px;height:20px;background:#22c55e;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3)"></div>',iconSize:[20,20],iconAnchor:[10,10]})
+  }).addTo(map);
+  parent.postMessage({type:'map-click',lat:e.latlng.lat,lng:e.latlng.lng},'*');
+});
+map.getContainer().style.cursor='crosshair';`
+    : '';
 
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"/>
@@ -209,5 +263,6 @@ fetch('${osrmUrl}').then(r=>r.json()).then(data=>{
 }).catch(function(){
   if(c.length>1){L.polyline(c,{color:'#1a1a1a',weight:2,opacity:0.4,dashArray:'6,5'}).addTo(map);}
 });
+${clickHandler}
 <\/script></body></html>`;
 }
