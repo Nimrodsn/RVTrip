@@ -11,6 +11,7 @@ export interface ItineraryLocation {
   type: LocationType;
   coords: Coords;
   note: string;
+  url?: string;
   currencyAlert?: boolean;
 }
 

@@ -42,6 +42,7 @@ export const strings = {
     type: 'סוג',
     note: 'הערה',
     custom: 'מותאם',
+    website: 'אתר',
   },
   checklist: {
     title: 'בדיקה לפני יציאה',

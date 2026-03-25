@@ -152,7 +152,18 @@ export default function MapView({ customStops = [], editMode = false, onMapClick
                   {loc.currencyAlert && (
                     <div className="mt-1 text-xs font-semibold text-orange-600">⚠️ התראת מטבע</div>
                   )}
-                  <div className="mt-2 flex gap-2">
+                  <div className="mt-2 flex gap-2 flex-wrap">
+                    {loc.url && (
+                      <a
+                        href={loc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        🌐 {strings.map.website} ↗
+                      </a>
+                    )}
                     <a
                       href={`https://www.google.com/maps/dir/?api=1&destination=${loc.coords.lat},${loc.coords.lng}`}
                       target="_blank"
@@ -210,9 +221,12 @@ function buildFullMapHtml(
   const markers = locations
     .map((loc) => {
       const c = TYPE_COLORS[loc.type];
+      const urlLink = loc.url
+        ? `<br/><a href="${loc.url}" target="_blank" style="color:#2563eb;font-size:12px">🌐 אתר ↗</a>`
+        : '';
       return `L.circleMarker([${loc.coords.lat}, ${loc.coords.lng}], {
         radius: 9, fillColor: '${c.dot}', color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.9
-      }).addTo(map).bindPopup('<b>${loc.name.replace(/'/g, "\\'")}</b><br/>${loc.note.replace(/'/g, "\\'")}');`;
+      }).addTo(map).bindPopup('<b>${loc.name.replace(/'/g, "\\'")}</b><br/>${loc.note.replace(/'/g, "\\'")}${urlLink}');`;
     })
     .join('\n');
 

@@ -348,6 +348,16 @@ export default function TodayPage() {
                       </button>
                     </>
                   )}
+                  {loc.url && (
+                    <a
+                      href={loc.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      🌐 {strings.map.website} ↗
+                    </a>
+                  )}
                   <a
                     href={`https://www.google.com/maps/dir/?api=1&destination=${loc.coords.lat},${loc.coords.lng}`}
                     target="_blank"
