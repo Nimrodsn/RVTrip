@@ -1,6 +1,6 @@
 'use client';
 
-import { itinerary, days } from '@/lib/itinerary';
+import { itinerary, days, getDateForDay } from '@/lib/itinerary';
 import { TYPE_COLORS, TYPE_EMOJI, type LocationType } from '@/lib/types';
 
 export default function DayTimeline() {
@@ -14,8 +14,11 @@ export default function DayTimeline() {
     <div className="space-y-3">
       {days.map((day) => (
         <div key={day} className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold shrink-0">
-            {day}
+          <div className="flex flex-col items-center shrink-0">
+            <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold">
+              {day}
+            </div>
+            <span className="text-[10px] text-gray-400 mt-0.5">{getDateForDay(day).split(' ')[1]}</span>
           </div>
           <div className="flex flex-wrap gap-2 flex-1">
             {grouped[day].map((loc, i) => (

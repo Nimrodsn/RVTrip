@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { itinerary, days } from '@/lib/itinerary';
+import { itinerary, days, getDateForDay } from '@/lib/itinerary';
 import { strings } from '@/lib/strings';
 import { TYPE_COLORS, TYPE_EMOJI, type DayNote, type CustomStop, type LocationType } from '@/lib/types';
 
@@ -152,7 +152,12 @@ export default function TodayPage() {
 
   return (
     <div className="p-4 sm:p-8 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-extrabold text-primary mb-6">{strings.today.title}</h1>
+      <div className="flex items-baseline gap-3 mb-6 flex-wrap">
+        <h1 className="text-2xl font-extrabold text-primary">{strings.today.title}</h1>
+        <span className="text-sm text-gray-500 font-medium">
+          {strings.budget.day} {selectedDay} — {getDateForDay(selectedDay)}
+        </span>
+      </div>
 
       {/* Day Selector */}
       <div className="flex gap-2 mb-6 flex-wrap">
@@ -160,13 +165,16 @@ export default function TodayPage() {
           <button
             key={d}
             onClick={() => setSelectedDay(d)}
-            className={`w-10 h-10 rounded-full font-bold text-sm transition-colors ${
+            className={`flex flex-col items-center px-3 py-2 rounded-xl font-bold text-sm transition-colors ${
               selectedDay === d
                 ? 'bg-primary text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            {d}
+            <span>{d}</span>
+            <span className={`text-[10px] font-medium ${selectedDay === d ? 'text-white/80' : 'text-gray-400'}`}>
+              {getDateForDay(d).split(' ')[1]}
+            </span>
           </button>
         ))}
       </div>

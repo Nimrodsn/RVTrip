@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { itinerary, days } from '@/lib/itinerary';
+import { itinerary, days, getDateForDay } from '@/lib/itinerary';
 import { TYPE_COLORS, TYPE_EMOJI, type LocationType, type ItineraryLocation } from '@/lib/types';
 import { strings } from '@/lib/strings';
 
@@ -77,7 +77,7 @@ export default function MapView({ customStops = [], editMode = false, onMapClick
                 filterDay === d ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              {d}
+              {d} <span className="opacity-70">{getDateForDay(d).split(' ')[1]}</span>
             </button>
           ))}
         </div>

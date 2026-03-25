@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { days } from '@/lib/itinerary';
+import { days, getDateForDay } from '@/lib/itinerary';
 import { strings } from '@/lib/strings';
 import { TYPE_COLORS, TYPE_EMOJI, type LocationType } from '@/lib/types';
 import MapView from '@/components/MapView';
@@ -123,7 +123,7 @@ export default function MapPage() {
               >
                 {days.map((d) => (
                   <option key={d} value={d}>
-                    {strings.map.day} {d}
+                    {strings.map.day} {d} — {getDateForDay(d)}
                   </option>
                 ))}
               </select>

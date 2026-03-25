@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { itinerary, days } from '@/lib/itinerary';
+import { itinerary, days, getTripDateRange } from '@/lib/itinerary';
 import { strings } from '@/lib/strings';
 import DayTimeline from '@/components/DayTimeline';
 import HomeMapPreview from '@/components/HomeMapPreview';
@@ -83,7 +83,7 @@ export default function HomePage() {
         <div className="flex gap-6 mb-6 text-sm text-gray-500">
           <span>{days.length} {strings.home.days}</span>
           <span>{itinerary.locations.length} {strings.home.stops}</span>
-          <span>📅 {itinerary.start_date}</span>
+          <span>📅 {getTripDateRange()}</span>
         </div>
         <DayTimeline />
       </div>

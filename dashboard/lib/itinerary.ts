@@ -26,3 +26,19 @@ export const itinerary: Itinerary = {
 };
 
 export const days = Array.from(new Set(itinerary.locations.map((l) => l.day))).sort((a, b) => a - b);
+
+export function getDateForDay(day: number): string {
+  const base = new Date(itinerary.start_date);
+  base.setDate(base.getDate() + day - 1);
+  const dd = base.getDate();
+  const mm = base.getMonth() + 1;
+  const weekday = base.toLocaleDateString('he-IL', { weekday: 'short' });
+  return `${weekday} ${dd}.${mm}`;
+}
+
+export function getTripDateRange(): string {
+  const start = new Date(itinerary.start_date);
+  const end = new Date(itinerary.start_date);
+  end.setDate(end.getDate() + days.length - 1);
+  return `${start.getDate()}.${start.getMonth() + 1} - ${end.getDate()}.${end.getMonth() + 1}.${end.getFullYear()}`;
+}
