@@ -76,6 +76,13 @@ export interface CustomStop {
   note: string;
 }
 
+export interface RvLocation {
+  rv_id: 'rv1' | 'rv2';
+  lat: number;
+  lng: number;
+  updated_at: string;
+}
+
 export const TYPE_COLORS: Record<LocationType, { bg: string; dot: string; text: string }> = {
   campsite: { bg: '#e8f5e9', dot: '#2e7d32', text: '#1b5e20' },
   attraction: { bg: '#ffebee', dot: '#c62828', text: '#b71c1c' },

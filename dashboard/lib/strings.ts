@@ -158,4 +158,14 @@ export const strings = {
     fileName: 'שם קובץ',
     pickFile: 'בחר קובץ',
   },
+  liveLocation: {
+    shareLocation: 'שתף מיקום',
+    stopSharing: 'הפסק שיתוף',
+    rv1: 'קרוואן 1',
+    rv2: 'קרוואן 2',
+    iAm: 'אני נוהג ב...',
+    lastUpdate: 'עדכון אחרון',
+    locationSharing: 'שיתוף מיקום חי',
+    gpsUnavailable: 'GPS לא זמין',
+  },
 };

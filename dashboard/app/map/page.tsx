@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { days, getDateForDay } from '@/lib/itinerary';
 import { strings } from '@/lib/strings';
-import { TYPE_COLORS, TYPE_EMOJI, type LocationType } from '@/lib/types';
+import { TYPE_COLORS, TYPE_EMOJI, type LocationType, type RvLocation } from '@/lib/types';
 import MapView from '@/components/MapView';
 
 const TYPE_OPTIONS: { key: LocationType; label: string }[] = [
@@ -12,6 +12,10 @@ const TYPE_OPTIONS: { key: LocationType; label: string }[] = [
   { key: 'attraction', label: strings.map.attraction },
   { key: 'supply', label: strings.map.supply },
 ];
+
+const RV_IDS = ['rv1', 'rv2'] as const;
+type RvId = (typeof RV_IDS)[number];
+const THROTTLE_MS = 10_000;
 
 type CustomStopRow = {
   id: string;
@@ -34,6 +38,103 @@ export default function MapPage() {
     note: '',
   });
   const [saving, setSaving] = useState(false);
+
+  // Live location state
+  const [rvIdentity, setRvIdentity] = useState<RvId | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [rvLocations, setRvLocations] = useState<RvLocation[]>([]);
+  const [gpsError, setGpsError] = useState<string | null>(null);
+  const watchIdRef = useRef<number | null>(null);
+  const lastUpsertRef = useRef<number>(0);
+
+  // Load RV identity from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('rv_identity');
+    if (stored === 'rv1' || stored === 'rv2') setRvIdentity(stored);
+  }, []);
+
+  // Load existing RV locations + subscribe to realtime changes
+  useEffect(() => {
+    supabase.from('rv_locations').select('*').then(({ data }) => {
+      if (data) setRvLocations(data as RvLocation[]);
+    });
+
+    const channel = supabase
+      .channel('rv_locations_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'rv_locations' },
+        (payload) => {
+          const row = (payload.new || payload.old) as RvLocation | undefined;
+          if (!row) return;
+          setRvLocations((prev) => {
+            const idx = prev.findIndex((r) => r.rv_id === row.rv_id);
+            if (payload.eventType === 'DELETE') {
+              return prev.filter((r) => r.rv_id !== row.rv_id);
+            }
+            if (idx >= 0) {
+              const next = [...prev];
+              next[idx] = row;
+              return next;
+            }
+            return [...prev, row];
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Geolocation sharing lifecycle
+  useEffect(() => {
+    if (!sharing || !rvIdentity) return;
+
+    if (!navigator.geolocation) {
+      setGpsError(strings.liveLocation.gpsUnavailable);
+      setSharing(false);
+      return;
+    }
+
+    const wId = navigator.geolocation.watchPosition(
+      (pos) => {
+        setGpsError(null);
+        const now = Date.now();
+        if (now - lastUpsertRef.current < THROTTLE_MS) return;
+        lastUpsertRef.current = now;
+
+        supabase
+          .from('rv_locations')
+          .upsert(
+            { rv_id: rvIdentity, lat: pos.coords.latitude, lng: pos.coords.longitude, updated_at: new Date().toISOString() },
+            { onConflict: 'rv_id' }
+          )
+          .then();
+      },
+      (err) => {
+        setGpsError(err.message);
+      },
+      { enableHighAccuracy: true, maximumAge: 10000 }
+    );
+    watchIdRef.current = wId;
+
+    return () => {
+      navigator.geolocation.clearWatch(wId);
+      watchIdRef.current = null;
+    };
+  }, [sharing, rvIdentity]);
+
+  function selectRv(id: RvId) {
+    setRvIdentity(id);
+    localStorage.setItem('rv_identity', id);
+  }
+
+  function toggleSharing() {
+    if (!rvIdentity) return;
+    setSharing((prev) => !prev);
+  }
 
   useEffect(() => {
     loadStops();
@@ -94,6 +195,67 @@ export default function MapPage() {
         >
           {editMode ? strings.today.donEditing : strings.today.editPlan}
         </button>
+      </div>
+
+      {/* RV identity selector + share toggle */}
+      <div className="flex flex-wrap items-center gap-3 px-4 py-2 bg-gray-50 border-b border-gray-100">
+        <span className="text-xs font-semibold text-gray-500">{strings.liveLocation.iAm}</span>
+        {RV_IDS.map((id) => (
+          <button
+            key={id}
+            onClick={() => selectRv(id)}
+            className={`px-3 py-1 text-xs rounded-full font-semibold transition-colors ${
+              rvIdentity === id
+                ? id === 'rv1'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-purple-600 text-white'
+                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            {id === 'rv1' ? strings.liveLocation.rv1 : strings.liveLocation.rv2}
+          </button>
+        ))}
+
+        {rvIdentity && (
+          <button
+            onClick={toggleSharing}
+            className={`flex items-center gap-2 px-3 py-1 text-xs rounded-full font-semibold transition-colors ${
+              sharing
+                ? 'bg-red-100 text-red-700 border border-red-200'
+                : 'bg-green-100 text-green-700 border border-green-200'
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${sharing ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}
+            />
+            {sharing ? strings.liveLocation.stopSharing : strings.liveLocation.shareLocation}
+          </button>
+        )}
+
+        {gpsError && (
+          <span className="text-xs text-red-500 font-medium">{gpsError}</span>
+        )}
+
+        {/* Show live status badges for both RVs */}
+        {rvLocations.map((rv) => {
+          const mins = Math.round((Date.now() - new Date(rv.updated_at).getTime()) / 60000);
+          const fresh = mins < 5;
+          return (
+            <span
+              key={rv.rv_id}
+              className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                rv.rv_id === 'rv1'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                  : 'bg-purple-50 text-purple-700 border border-purple-200'
+              }`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${fresh ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+              {rv.rv_id === 'rv1' ? strings.liveLocation.rv1 : strings.liveLocation.rv2}
+              {' '}
+              ({mins < 1 ? '<1' : mins} {strings.map.minutes})
+            </span>
+          );
+        })}
       </div>
 
       {/* Add stop form (slides in when coordinates are clicked) */}
@@ -170,6 +332,7 @@ export default function MapPage() {
           customStops={customStops}
           editMode={editMode}
           onMapClick={handleMapClick}
+          rvLocations={rvLocations}
         />
       </div>
     </div>

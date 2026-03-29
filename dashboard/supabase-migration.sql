@@ -115,3 +115,15 @@ create policy "Allow public delete from photos" on storage.objects for delete us
 create policy "Allow public upload to documents" on storage.objects for insert with check (bucket_id = 'documents');
 create policy "Allow public read from documents" on storage.objects for select using (bucket_id = 'documents');
 create policy "Allow public delete from documents" on storage.objects for delete using (bucket_id = 'documents');
+
+-- RV live location sharing
+create table if not exists rv_locations (
+  rv_id text primary key check (rv_id in ('rv1', 'rv2')),
+  lat double precision not null,
+  lng double precision not null,
+  updated_at timestamptz not null default now()
+);
+
+alter publication supabase_realtime add table rv_locations;
+alter table rv_locations enable row level security;
+create policy "Allow all on rv_locations" on rv_locations for all using (true) with check (true);

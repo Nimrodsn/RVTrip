@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { itinerary, days, getDateForDay } from '@/lib/itinerary';
-import { TYPE_COLORS, TYPE_EMOJI, type LocationType, type ItineraryLocation } from '@/lib/types';
+import { TYPE_COLORS, TYPE_EMOJI, type LocationType, type ItineraryLocation, type RvLocation } from '@/lib/types';
 import { strings } from '@/lib/strings';
 
 const TYPE_LABELS: Record<LocationType, string> = {
@@ -25,9 +25,10 @@ interface Props {
   customStops?: CustomStopRow[];
   editMode?: boolean;
   onMapClick?: (lat: number, lng: number) => void;
+  rvLocations?: RvLocation[];
 }
 
-export default function MapView({ customStops = [], editMode = false, onMapClick }: Props) {
+export default function MapView({ customStops = [], editMode = false, onMapClick, rvLocations = [] }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [filterDay, setFilterDay] = useState<number | null>(null);
   const [filterType, setFilterType] = useState<LocationType | null>(null);
@@ -57,7 +58,7 @@ export default function MapView({ customStops = [], editMode = false, onMapClick
     return true;
   });
 
-  const html = buildFullMapHtml(filtered, customStops, editMode);
+  const html = buildFullMapHtml(filtered, customStops, editMode, rvLocations);
 
   return (
     <div className="flex flex-col h-full">
@@ -276,6 +277,7 @@ function buildFullMapHtml(
   locations: ItineraryLocation[],
   customStops: CustomStopRow[] = [],
   editMode: boolean = false,
+  rvLocations: RvLocation[] = [],
 ): string {
   const markers = locations
     .map((loc) => {
@@ -390,17 +392,35 @@ fetch(overpassUrl).then(function(r){return r.json()}).then(function(data){
 });
 ` : '';
 
+  const rvMarkerJs = rvLocations
+    .filter((rv) => rv.lat !== 0 && rv.lng !== 0)
+    .map((rv) => {
+      const color = rv.rv_id === 'rv1' ? '#2563eb' : '#9333ea';
+      const label = rv.rv_id === 'rv1' ? 'קרוואן 1' : 'קרוואן 2';
+      const ago = Math.round((Date.now() - new Date(rv.updated_at).getTime()) / 60000);
+      const timeLabel = ago < 1 ? '<1 דק\\x27' : ago + ' דק\\x27';
+      return `L.marker([${rv.lat},${rv.lng}],{
+  icon:L.divIcon({className:'',html:'<div style="position:relative"><div class="rv-pulse" style="position:absolute;top:-8px;left:-8px;width:32px;height:32px;border-radius:50%;background:${color}33;animation:rvPulse 2s infinite"></div><div style="width:16px;height:16px;background:${color};border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.4);position:relative;z-index:2"></div></div>',iconSize:[16,16],iconAnchor:[8,8]}),
+  zIndexOffset:1000
+}).addTo(map).bindPopup('<b style="color:${color}">${label}</b><br/><span style="font-size:11px;color:#666">${timeLabel}</span>');`;
+    })
+    .join('\n');
+
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>
-<style>html,body,#map{margin:0;padding:0;width:100%;height:100%}</style>
+<style>
+html,body,#map{margin:0;padding:0;width:100%;height:100%}
+@keyframes rvPulse{0%{transform:scale(1);opacity:0.7}50%{transform:scale(1.8);opacity:0}100%{transform:scale(1);opacity:0}}
+</style>
 </head><body><div id="map"></div>
 <script>
 var map=L.map('map');
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'OSM'}).addTo(map);
 ${markers}
 ${customMarkers}
+${rvMarkerJs}
 var c=[${polyCoords}];
 if(c.length>0){map.fitBounds(c,{padding:[40,40]});}
 fetch('${osrmUrl}').then(r=>r.json()).then(data=>{
