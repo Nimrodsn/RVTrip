@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useDrivingMode } from '@/lib/DrivingModeContext';
+import { strings } from '@/lib/strings';
 
 const navItems = [
   { href: '/', label: 'ראשי', icon: '🏠' },
@@ -20,6 +22,7 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const { drivingMode, toggleDrivingMode } = useDrivingMode();
 
   return (
     <>
@@ -86,6 +89,20 @@ export default function Sidebar() {
             );
           })}
         </nav>
+        <div className="px-4 pt-3 pb-1 border-t border-white/10">
+          <button
+            onClick={toggleDrivingMode}
+            className={cn(
+              'w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors',
+              drivingMode
+                ? 'bg-amber-400 text-black'
+                : 'bg-white/10 text-white/70 hover:bg-white/15 hover:text-white'
+            )}
+          >
+            <span className="text-lg">{drivingMode ? '☀️' : '🚗'}</span>
+            <span>{drivingMode ? strings.drivingMode.on : strings.drivingMode.toggle}</span>
+          </button>
+        </div>
         <div className="p-4 border-t border-white/10 text-xs text-white/30 text-center">
           RVTrip Dashboard v1.0
         </div>

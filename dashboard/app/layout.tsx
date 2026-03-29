@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Sidebar from '@/components/Sidebar';
 import OfflineBanner from '@/components/OfflineBanner';
+import { DrivingModeProvider } from '@/lib/DrivingModeContext';
 
 export const metadata: Metadata = {
   title: 'מפקד השיירה - RVTrip Dashboard',
@@ -29,13 +30,15 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.svg" />
       </head>
       <body className="min-h-screen bg-gray-50">
-        <OfflineBanner />
-        <div className="flex min-h-screen">
-          <Sidebar />
-          <main className="flex-1 overflow-auto pt-14 lg:pt-0">
-            {children}
-          </main>
-        </div>
+        <DrivingModeProvider>
+          <OfflineBanner />
+          <div className="flex min-h-screen">
+            <Sidebar />
+            <main className="flex-1 overflow-auto pt-14 lg:pt-0">
+              {children}
+            </main>
+          </div>
+        </DrivingModeProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `

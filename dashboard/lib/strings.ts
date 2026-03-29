@@ -197,4 +197,9 @@ export const strings = {
     offlineBanner: 'אין חיבור לאינטרנט - מצב אופליין',
     updateAvailable: 'גרסה חדשה זמינה',
   },
+  drivingMode: {
+    toggle: 'מצב נהיגה',
+    on: 'מצב נהיגה פעיל',
+    off: 'מצב רגיל',
+  },
 };

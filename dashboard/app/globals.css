@@ -22,3 +22,111 @@ body {
   height: 100%;
   z-index: 0;
 }
+
+/* ── Driving Mode (High-Contrast) ── */
+
+html.driving-mode {
+  font-size: 22px;
+}
+
+html.driving-mode body {
+  background-color: #ffffff;
+}
+
+html.driving-mode p,
+html.driving-mode span,
+html.driving-mode li,
+html.driving-mode h1,
+html.driving-mode h2,
+html.driving-mode h3,
+html.driving-mode h4,
+html.driving-mode label {
+  color: #000000 !important;
+}
+
+html.driving-mode button,
+html.driving-mode a[role="button"],
+html.driving-mode [type="submit"] {
+  min-height: 48px;
+  font-weight: 700;
+  padding-top: 0.625rem;
+  padding-bottom: 0.625rem;
+}
+
+html.driving-mode input,
+html.driving-mode select,
+html.driving-mode textarea {
+  min-height: 48px;
+  font-size: 1rem;
+  border-width: 2px;
+  border-color: #374151;
+}
+
+html.driving-mode input:focus,
+html.driving-mode select:focus,
+html.driving-mode textarea:focus {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+html.driving-mode .bg-white,
+html.driving-mode .bg-gray-50 {
+  background-color: #ffffff !important;
+  border-color: #374151 !important;
+}
+
+html.driving-mode .border,
+html.driving-mode .border-gray-100,
+html.driving-mode .border-gray-200 {
+  border-color: #374151 !important;
+  border-width: 2px;
+}
+
+html.driving-mode .shadow-sm,
+html.driving-mode .shadow-md {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+html.driving-mode .rounded-xl {
+  border-radius: 1rem;
+}
+
+html.driving-mode .rounded-lg {
+  border-radius: 0.75rem;
+}
+
+html.driving-mode .text-xs {
+  font-size: 0.85rem;
+}
+
+html.driving-mode .text-sm {
+  font-size: 1rem;
+}
+
+html.driving-mode .text-gray-400,
+html.driving-mode .text-gray-500 {
+  color: #374151 !important;
+}
+
+html.driving-mode .text-gray-300 {
+  color: #6b7280 !important;
+}
+
+/* Sidebar nav items bigger in driving mode */
+html.driving-mode aside nav a {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  font-size: 1rem;
+}
+
+html.driving-mode aside nav a span {
+  color: inherit !important;
+}
+
+/* Category filter pills */
+html.driving-mode .rounded-full {
+  min-height: 40px;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  font-size: 0.9rem;
+}
