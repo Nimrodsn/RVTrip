@@ -127,3 +127,17 @@ create table if not exists rv_locations (
 alter publication supabase_realtime add table rv_locations;
 alter table rv_locations enable row level security;
 create policy "Allow all on rv_locations" on rv_locations for all using (true) with check (true);
+
+-- Per-RV departure checklist
+create table if not exists rv_checklist (
+  id uuid primary key default uuid_generate_v4(),
+  rv_id text not null check (rv_id in ('rv1', 'rv2')),
+  key text not null,
+  checked boolean not null default false,
+  updated_at timestamptz not null default now(),
+  unique (rv_id, key)
+);
+
+alter publication supabase_realtime add table rv_checklist;
+alter table rv_checklist enable row level security;
+create policy "Allow all on rv_checklist" on rv_checklist for all using (true) with check (true);

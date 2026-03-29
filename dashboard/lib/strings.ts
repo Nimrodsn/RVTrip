@@ -66,6 +66,11 @@ export const strings = {
     allDone: 'הכל מוכן ליציאה',
     resetAll: 'אפס הכל',
     completed: 'הושלמו',
+    otherRvStatus: 'סטטוס הקרוואן השני',
+    readyToRoll: 'מוכן לדרך!',
+    notReady: 'עדיין לא מוכן',
+    selectRv: 'בחר קרוואן',
+    noRvSelected: 'בחר את הקרוואן שלך כדי להתחיל',
   },
   meltdown: {
     button: 'כפתור התמוטטות',
