@@ -367,6 +367,14 @@ export default function TodayPage() {
                     </a>
                   )}
                   <a
+                    href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${loc.coords.lat},${loc.coords.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-600 hover:underline"
+                  >
+                    📷 {strings.map.viewEntrance} ↗
+                  </a>
+                  <a
                     href={`https://www.google.com/maps/dir/?api=1&destination=${loc.coords.lat},${loc.coords.lng}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -460,14 +468,24 @@ export default function TodayPage() {
                     </>
                   )}
                   {stop.coords.lat !== 0 && (
-                    <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${stop.coords.lat},${stop.coords.lng}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:underline"
-                    >
-                      {strings.today.navigateNow} ↗
-                    </a>
+                    <>
+                      <a
+                        href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${stop.coords.lat},${stop.coords.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        📷 {strings.map.viewEntrance} ↗
+                      </a>
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${stop.coords.lat},${stop.coords.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        {strings.today.navigateNow} ↗
+                      </a>
+                    </>
                   )}
                 </div>
               </div>

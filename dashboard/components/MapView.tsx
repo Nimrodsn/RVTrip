@@ -203,6 +203,26 @@ export default function MapView({ customStops = [], editMode = false, onMapClick
                     <span className="text-xs text-yellow-600 font-medium">({strings.map.custom})</span>
                   </div>
                   <p className="text-xs text-gray-500 line-clamp-2">{s.note}</p>
+                  {s.lat !== 0 && (
+                    <div className="mt-2 flex gap-2 flex-wrap">
+                      <a
+                        href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${s.lat},${s.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        📷 {strings.map.viewEntrance} ↗
+                      </a>
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        {strings.map.navigate} ↗
+                      </a>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -222,20 +242,24 @@ function buildFullMapHtml(
     .map((loc) => {
       const c = TYPE_COLORS[loc.type];
       const urlLink = loc.url
-        ? `<br/><a href="${loc.url}" target="_blank" style="color:#2563eb;font-size:12px">🌐 אתר ↗</a>`
+        ? `<a href="${loc.url}" target="_blank" style="color:#2563eb;font-size:12px">🌐 אתר</a> `
         : '';
+      const svLink = `<a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${loc.coords.lat},${loc.coords.lng}" target="_blank" style="color:#2563eb;font-size:12px">📷 Street View</a> `;
+      const navLink = `<a href="https://www.google.com/maps/dir/?api=1&destination=${loc.coords.lat},${loc.coords.lng}" target="_blank" style="color:#2563eb;font-size:12px">🧭 ניווט</a>`;
       return `L.circleMarker([${loc.coords.lat}, ${loc.coords.lng}], {
         radius: 9, fillColor: '${c.dot}', color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.9
-      }).addTo(map).bindPopup('<b>${loc.name.replace(/'/g, "\\'")}</b><br/>${loc.note.replace(/'/g, "\\'")}${urlLink}');`;
+      }).addTo(map).bindPopup('<b>${loc.name.replace(/'/g, "\\'")}</b><br/><span style="font-size:12px;color:#666">${loc.note.replace(/'/g, "\\'")}</span><br/><div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">${urlLink}${svLink}${navLink}</div>');`;
     })
     .join('\n');
 
   const customMarkers = customStops
     .map((s) => {
       const c = TYPE_COLORS[s.type as LocationType] || TYPE_COLORS.supply;
+      const svLink = s.lat !== 0 ? `<a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${s.lat},${s.lng}" target="_blank" style="color:#2563eb;font-size:12px">📷 Street View</a> ` : '';
+      const navLink = s.lat !== 0 ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank" style="color:#2563eb;font-size:12px">🧭 ניווט</a>` : '';
       return `L.circleMarker([${s.lat}, ${s.lng}], {
         radius: 9, fillColor: '${c.dot}', color: '#ff0', weight: 3, opacity: 1, fillOpacity: 0.9
-      }).addTo(map).bindPopup('<b>${s.name.replace(/'/g, "\\'")}</b><br/>${s.note.replace(/'/g, "\\'")}');`;
+      }).addTo(map).bindPopup('<b>${s.name.replace(/'/g, "\\'")}</b><br/><span style="font-size:12px;color:#666">${s.note.replace(/'/g, "\\'")}</span><br/><div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">${svLink}${navLink}</div>');`;
     })
     .join('\n');
 
