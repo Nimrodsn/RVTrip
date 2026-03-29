@@ -32,11 +32,15 @@ export default function MapView({ customStops = [], editMode = false, onMapClick
   const [filterDay, setFilterDay] = useState<number | null>(null);
   const [filterType, setFilterType] = useState<LocationType | null>(null);
   const [selected, setSelected] = useState<ItineraryLocation | null>(null);
+  const [showHeightLayer, setShowHeightLayer] = useState(true);
 
   const handleMessage = useCallback(
     (e: MessageEvent) => {
       if (e.data?.type === 'map-click' && editMode && onMapClick) {
         onMapClick(e.data.lat, e.data.lng);
+      }
+      if (e.data?.type === 'height-toggle') {
+        setShowHeightLayer(e.data.visible);
       }
     },
     [editMode, onMapClick]
@@ -106,6 +110,24 @@ export default function MapView({ customStops = [], editMode = false, onMapClick
           ))}
         </div>
       </div>
+
+      {/* Height restriction legend */}
+      {showHeightLayer && (
+        <div className="flex flex-wrap items-center gap-4 px-4 py-2 bg-gray-50 border-b border-gray-100 text-xs">
+          <span className="font-semibold text-gray-600">{strings.map.heightToggle}:</span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-5 h-1 rounded bg-red-600 inline-block" />
+            <span className="text-red-700 font-medium">&lt;2.8{strings.map.meters} ({strings.map.heightImpassable})</span>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-5 h-1 rounded bg-orange-500 inline-block" />
+            <span className="text-orange-700 font-medium">2.8-3.3{strings.map.meters} ({strings.map.heightRisky})</span>
+          </span>
+          <span className="text-gray-500">
+            {strings.map.rvHeight}: {itinerary.rv_specs.height}{strings.map.meters}
+          </span>
+        </div>
+      )}
 
       {/* Edit mode banner */}
       {editMode && (
@@ -267,6 +289,14 @@ function buildFullMapHtml(
   const routeCoords = locations.map((l) => `${l.coords.lng},${l.coords.lat}`).join(';');
   const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${routeCoords}?overview=full&geometries=geojson`;
 
+  // Compute bounding box for Overpass query (itinerary extent + padding)
+  const allLats = locations.map((l) => l.coords.lat);
+  const allLngs = locations.map((l) => l.coords.lng);
+  const bboxPad = 0.15;
+  const bbox = locations.length > 0
+    ? `${Math.min(...allLats) - bboxPad},${Math.min(...allLngs) - bboxPad},${Math.max(...allLats) + bboxPad},${Math.max(...allLngs) + bboxPad}`
+    : '';
+
   const clickHandler = editMode
     ? `
 var pendingMarker=null;
@@ -279,6 +309,66 @@ map.on('click',function(e){
 });
 map.getContainer().style.cursor='crosshair';`
     : '';
+
+  const heightRestrictionScript = bbox ? `
+// Height restriction layer via Overpass API
+var heightGroup=L.layerGroup().addTo(map);
+var heightVisible=true;
+
+var heightCtrl=L.control({position:'topright'});
+heightCtrl.onAdd=function(){
+  var div=L.DomUtil.create('div','');
+  div.innerHTML='<button id="htBtn" style="background:#fff;border:2px solid rgba(0,0,0,0.2);border-radius:4px;padding:6px 10px;cursor:pointer;font-size:12px;font-weight:600;box-shadow:0 2px 4px rgba(0,0,0,0.15);white-space:nowrap">⚠️ הגבלות גובה</button>';
+  L.DomEvent.disableClickPropagation(div);
+  return div;
+};
+heightCtrl.addTo(map);
+
+document.addEventListener('click',function(e){
+  if(e.target&&e.target.id==='htBtn'){
+    heightVisible=!heightVisible;
+    if(heightVisible){map.addLayer(heightGroup);e.target.style.opacity='1';}
+    else{map.removeLayer(heightGroup);e.target.style.opacity='0.5';}
+    parent.postMessage({type:'height-toggle',visible:heightVisible},'*');
+  }
+});
+
+var overpassQuery='[out:json][timeout:30];(way["maxheight"](${bbox});node["maxheight"](${bbox}););out body geom;';
+var overpassUrl='https://overpass-api.de/api/interpreter?data='+encodeURIComponent(overpassQuery);
+
+fetch(overpassUrl).then(function(r){return r.json()}).then(function(data){
+  if(!data||!data.elements)return;
+  var count=0;
+  data.elements.forEach(function(el){
+    var raw=el.tags&&el.tags.maxheight;
+    if(!raw)return;
+    var h=parseFloat(raw);
+    if(isNaN(h)||h>=3.3)return;
+    count++;
+    var color=h<2.8?'#dc2626':'#f97316';
+    var weight=h<2.8?6:5;
+    var opacity=h<2.8?0.8:0.7;
+    var label=h<2.8?'לא עביר':'מסוכן';
+    var popup='<b>⚠️ הגבלת גובה: '+h+"מ'</b><br/><span style=\\"color:'+color+';font-weight:600\\">'+label+'</span><br/><span style=\\"font-size:11px;color:#666\\">גובה הרכב: ${itinerary.rv_specs.height}מ\\'</span>';
+
+    if(el.type==='way'&&el.geometry&&el.geometry.length>1){
+      var coords=el.geometry.map(function(g){return[g.lat,g.lon]});
+      L.polyline(coords,{color:color,weight:weight,opacity:opacity}).addTo(heightGroup).bindPopup(popup);
+    }else if(el.type==='node'){
+      var lat=el.lat,lng=el.lon;
+      L.marker([lat,lng],{
+        icon:L.divIcon({className:'',html:'<div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid '+color+';filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4))"></div>',iconSize:[16,14],iconAnchor:[8,14]})
+      }).addTo(heightGroup).bindPopup(popup);
+    }
+  });
+  if(count>0){
+    var badge=document.getElementById('htBtn');
+    if(badge)badge.innerHTML='⚠️ הגבלות גובה ('+count+')';
+  }
+}).catch(function(err){
+  console.warn('Height restrictions fetch failed:',err);
+});
+` : '';
 
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"/>
@@ -301,6 +391,7 @@ fetch('${osrmUrl}').then(r=>r.json()).then(data=>{
 }).catch(function(){
   if(c.length>1){L.polyline(c,{color:'#1a1a1a',weight:2,opacity:0.4,dashArray:'6,5'}).addTo(map);}
 });
+${heightRestrictionScript}
 ${clickHandler}
 <\/script></body></html>`;
 }

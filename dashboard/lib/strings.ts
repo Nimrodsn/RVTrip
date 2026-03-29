@@ -43,6 +43,13 @@ export const strings = {
     note: 'הערה',
     custom: 'מותאם',
     website: 'אתר',
+    heightWarning: 'הגבלת גובה',
+    heightToggle: 'הגבלות גובה',
+    meters: "מ'",
+    heightImpassable: 'לא עביר',
+    heightRisky: 'מסוכן',
+    rvHeight: 'גובה הרכב',
+    loading: 'טוען...',
   },
   checklist: {
     title: 'בדיקה לפני יציאה',
