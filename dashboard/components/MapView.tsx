@@ -59,6 +59,10 @@ export default function MapView({ customStops = [], editMode = false, onMapClick
 
   const html = buildFullMapHtml(filtered, customStops, editMode);
 
+  // #region agent log
+  useEffect(() => { fetch('http://127.0.0.1:7360/ingest/056d3466-13b6-45b5-8b09-052b813604f8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'72819b'},body:JSON.stringify({sessionId:'72819b',location:'MapView.tsx:render',message:'MapView rendered',data:{htmlLength:html.length,hasHeightScript:html.includes('heightGroup'),snippet:html.substring(html.indexOf('var popup='),html.indexOf('var popup=')+300)},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{}); }, [html]);
+  // #endregion
+
   return (
     <div className="flex flex-col h-full">
       {/* Filter Bar */}
@@ -310,6 +314,7 @@ map.on('click',function(e){
 map.getContainer().style.cursor='crosshair';`
     : '';
 
+  const rvH = itinerary.rv_specs.height;
   const heightRestrictionScript = bbox ? `
 // Height restriction layer via Overpass API
 var heightGroup=L.layerGroup().addTo(map);
@@ -349,7 +354,7 @@ fetch(overpassUrl).then(function(r){return r.json()}).then(function(data){
     var weight=h<2.8?6:5;
     var opacity=h<2.8?0.8:0.7;
     var label=h<2.8?'לא עביר':'מסוכן';
-    var popup='<b>⚠️ הגבלת גובה: '+h+"מ'</b><br/><span style=\\"color:'+color+';font-weight:600\\">'+label+'</span><br/><span style=\\"font-size:11px;color:#666\\">גובה הרכב: ${itinerary.rv_specs.height}מ\\'</span>';
+    var popup='<b>⚠️ הגבלת גובה: '+h+'מ\\x27</b><br/><span style="color:'+color+';font-weight:600">'+label+'</span><br/><span style="font-size:11px;color:#666">גובה הרכב: ${rvH}מ\\x27</span>';
 
     if(el.type==='way'&&el.geometry&&el.geometry.length>1){
       var coords=el.geometry.map(function(g){return[g.lat,g.lon]});
