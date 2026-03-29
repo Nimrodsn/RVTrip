@@ -59,10 +59,6 @@ export default function MapView({ customStops = [], editMode = false, onMapClick
 
   const html = buildFullMapHtml(filtered, customStops, editMode);
 
-  // #region agent log
-  useEffect(() => { fetch('http://127.0.0.1:7360/ingest/056d3466-13b6-45b5-8b09-052b813604f8',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'72819b'},body:JSON.stringify({sessionId:'72819b',location:'MapView.tsx:render',message:'MapView rendered',data:{htmlLength:html.length,hasHeightScript:html.includes('heightGroup'),snippet:html.substring(html.indexOf('var popup='),html.indexOf('var popup=')+300)},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{}); }, [html]);
-  // #endregion
-
   return (
     <div className="flex flex-col h-full">
       {/* Filter Bar */}
