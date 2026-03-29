@@ -133,6 +133,12 @@ export const strings = {
     day: 'יום',
     noExpenses: 'אין הוצאות עדיין',
     delete: 'מחק',
+    converter: 'ממיר מטבעות',
+    from: 'מ-',
+    to: 'ל-',
+    liveRate: 'שער חי',
+    rateUnavailable: 'שער לא זמין',
+    ils: 'ILS',
   },
   journal: {
     title: 'יומן תמונות',
