@@ -20,6 +20,10 @@ export default function CommanderPage() {
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'bot'; text: string }>>([]);
   const [input, setInput] = useState('');
 
+  const [sosLoading, setSosLoading] = useState(false);
+  const [sosResult, setSosResult] = useState<string | null>(null);
+  const [sosError, setSosError] = useState<string | null>(null);
+
   function sendMessage() {
     if (!input.trim()) return;
     const userMsg = { role: 'user' as const, text: input };
@@ -31,9 +35,97 @@ export default function CommanderPage() {
     setInput('');
   }
 
+  async function handleSOS() {
+    setSosLoading(true);
+    setSosResult(null);
+    setSosError(null);
+
+    let lat: number;
+    let lng: number;
+
+    try {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10_000,
+        });
+      });
+      lat = pos.coords.latitude;
+      lng = pos.coords.longitude;
+    } catch {
+      setSosLoading(false);
+      setSosError(strings.commander.sosNoGps);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/sos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lat,
+          lng,
+          rvHeight: itinerary.rv_specs.height,
+          rvWeight: itinerary.rv_specs.weight,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setSosError(data.error || strings.commander.sosError);
+      } else {
+        setSosResult(data.result);
+      }
+    } catch {
+      setSosError(strings.commander.sosError);
+    }
+
+    setSosLoading(false);
+  }
+
   return (
     <div className="p-8 max-w-3xl mx-auto">
       <h1 className="text-2xl font-extrabold text-primary mb-6">{strings.commander.title}</h1>
+
+      {/* SOS Button */}
+      <button
+        onClick={handleSOS}
+        disabled={sosLoading}
+        className="w-full mb-6 py-4 rounded-xl font-extrabold text-lg text-white bg-red-600 hover:bg-red-700 active:bg-red-800 transition-colors disabled:opacity-70 shadow-lg"
+      >
+        🚨 {strings.commander.sosButton}
+      </button>
+
+      {/* SOS Loading */}
+      {sosLoading && (
+        <div className="mb-6 rounded-xl border-2 border-red-300 bg-red-50 p-6 flex items-center justify-center gap-3">
+          <span className="relative flex h-5 w-5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+            <span className="relative inline-flex rounded-full h-5 w-5 bg-red-600" />
+          </span>
+          <span className="text-red-700 font-bold text-sm">{strings.commander.sosSearching}</span>
+        </div>
+      )}
+
+      {/* SOS Error */}
+      {sosError && !sosLoading && (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-5">
+          <p className="text-red-700 font-semibold text-sm">⚠️ {sosError}</p>
+        </div>
+      )}
+
+      {/* SOS Result */}
+      {sosResult && !sosLoading && (
+        <div className="mb-6 rounded-xl border-2 border-red-200 bg-white shadow-md overflow-hidden">
+          <div className="bg-red-600 px-5 py-3 flex items-center gap-2">
+            <span className="text-white text-lg">🏥</span>
+            <h3 className="font-bold text-white text-sm">{strings.commander.sosTitle}</h3>
+          </div>
+          <div className="p-5 text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
+            {sosResult}
+          </div>
+        </div>
+      )}
 
       {/* Currency Alert */}
       {currencyAlertStop && (

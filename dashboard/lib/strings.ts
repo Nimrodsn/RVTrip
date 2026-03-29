@@ -87,6 +87,11 @@ export const strings = {
     currencyAlertText: 'עצירה אחרונה בצ\'כיה! כדאי לנצל את הקרונות הצ\'כיות שנשארו לכם לפני המעבר לאירו בסלובקיה.',
     currencyAlertTitle: 'התראת מטבע',
     send: 'שלח',
+    sosButton: 'SOS חירום',
+    sosSearching: 'מחפש עזרה...',
+    sosNoGps: 'לא ניתן לאתר מיקום GPS',
+    sosError: 'שגיאה בחיפוש עזרה',
+    sosTitle: 'מידע חירום',
   },
   today: {
     title: 'תוכנית להיום',
