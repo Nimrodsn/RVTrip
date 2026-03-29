@@ -380,7 +380,15 @@ export default function TodayPage() {
                     rel="noopener noreferrer"
                     className="text-xs text-blue-600 hover:underline"
                   >
-                    {strings.today.navigateNow} ↗
+                    🚗 {strings.map.navigateDrive} ↗
+                  </a>
+                  <a
+                    href={`https://mapy.com/fnc/v1/route?end=${loc.coords.lng},${loc.coords.lat}&routeType=foot_hiking&mapset=outdoor`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-green-700 hover:underline"
+                  >
+                    🥾 {strings.map.navigateHike} ↗
                   </a>
                 </div>
               </div>
@@ -483,7 +491,15 @@ export default function TodayPage() {
                         rel="noopener noreferrer"
                         className="text-xs text-blue-600 hover:underline"
                       >
-                        {strings.today.navigateNow} ↗
+                        🚗 {strings.map.navigateDrive} ↗
+                      </a>
+                      <a
+                        href={`https://mapy.com/fnc/v1/route?end=${stop.coords.lng},${stop.coords.lat}&routeType=foot_hiking&mapset=outdoor`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-green-700 hover:underline"
+                      >
+                        🥾 {strings.map.navigateHike} ↗
                       </a>
                     </>
                   )}

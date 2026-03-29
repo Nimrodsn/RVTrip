@@ -23,6 +23,8 @@ export const strings = {
   map: {
     viewEntrance: 'צפייה בכניסה',
     navigate: 'ניווט',
+    navigateDrive: 'נווט ברכב',
+    navigateHike: 'שבילי הליכה',
     itinerary: 'מסלול הטיול',
     filterAll: 'הכל',
     campsite: 'קמפינג',

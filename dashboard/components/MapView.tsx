@@ -193,7 +193,16 @@ export default function MapView({ customStops = [], editMode = false, onMapClick
                       onClick={(e) => e.stopPropagation()}
                       className="text-xs text-blue-600 hover:underline"
                     >
-                      {strings.map.navigate} ↗
+                      🚗 {strings.map.navigateDrive} ↗
+                    </a>
+                    <a
+                      href={`https://mapy.com/fnc/v1/route?end=${loc.coords.lng},${loc.coords.lat}&routeType=foot_hiking&mapset=outdoor`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-xs text-green-700 hover:underline"
+                    >
+                      🥾 {strings.map.navigateHike} ↗
                     </a>
                     <a
                       href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${loc.coords.lat},${loc.coords.lng}`}
@@ -241,7 +250,15 @@ export default function MapView({ customStops = [], editMode = false, onMapClick
                         rel="noopener noreferrer"
                         className="text-xs text-blue-600 hover:underline"
                       >
-                        {strings.map.navigate} ↗
+                        🚗 {strings.map.navigateDrive} ↗
+                      </a>
+                      <a
+                        href={`https://mapy.com/fnc/v1/route?end=${s.lng},${s.lat}&routeType=foot_hiking&mapset=outdoor`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-green-700 hover:underline"
+                      >
+                        🥾 {strings.map.navigateHike} ↗
                       </a>
                     </div>
                   )}
@@ -267,10 +284,11 @@ function buildFullMapHtml(
         ? `<a href="${loc.url}" target="_blank" style="color:#2563eb;font-size:12px">🌐 אתר</a> `
         : '';
       const svLink = `<a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${loc.coords.lat},${loc.coords.lng}" target="_blank" style="color:#2563eb;font-size:12px">📷 Street View</a> `;
-      const navLink = `<a href="https://www.google.com/maps/dir/?api=1&destination=${loc.coords.lat},${loc.coords.lng}" target="_blank" style="color:#2563eb;font-size:12px">🧭 ניווט</a>`;
+      const driveLink = `<a href="https://www.google.com/maps/dir/?api=1&destination=${loc.coords.lat},${loc.coords.lng}" target="_blank" style="color:#2563eb;font-size:12px">🚗 נווט ברכב</a>`;
+      const hikeLink = `<a href="https://mapy.com/fnc/v1/route?end=${loc.coords.lng},${loc.coords.lat}&routeType=foot_hiking&mapset=outdoor" target="_blank" style="color:#15803d;font-size:12px">🥾 שבילי הליכה</a>`;
       return `L.circleMarker([${loc.coords.lat}, ${loc.coords.lng}], {
         radius: 9, fillColor: '${c.dot}', color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.9
-      }).addTo(map).bindPopup('<b>${loc.name.replace(/'/g, "\\'")}</b><br/><span style="font-size:12px;color:#666">${loc.note.replace(/'/g, "\\'")}</span><br/><div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">${urlLink}${svLink}${navLink}</div>');`;
+      }).addTo(map).bindPopup('<b>${loc.name.replace(/'/g, "\\'")}</b><br/><span style="font-size:12px;color:#666">${loc.note.replace(/'/g, "\\'")}</span><br/><div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">${urlLink}${svLink}${driveLink}${hikeLink}</div>');`;
     })
     .join('\n');
 
@@ -278,10 +296,11 @@ function buildFullMapHtml(
     .map((s) => {
       const c = TYPE_COLORS[s.type as LocationType] || TYPE_COLORS.supply;
       const svLink = s.lat !== 0 ? `<a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${s.lat},${s.lng}" target="_blank" style="color:#2563eb;font-size:12px">📷 Street View</a> ` : '';
-      const navLink = s.lat !== 0 ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank" style="color:#2563eb;font-size:12px">🧭 ניווט</a>` : '';
+      const driveLink = s.lat !== 0 ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank" style="color:#2563eb;font-size:12px">🚗 נווט ברכב</a>` : '';
+      const hikeLink = s.lat !== 0 ? `<a href="https://mapy.com/fnc/v1/route?end=${s.lng},${s.lat}&routeType=foot_hiking&mapset=outdoor" target="_blank" style="color:#15803d;font-size:12px">🥾 שבילי הליכה</a>` : '';
       return `L.circleMarker([${s.lat}, ${s.lng}], {
         radius: 9, fillColor: '${c.dot}', color: '#ff0', weight: 3, opacity: 1, fillOpacity: 0.9
-      }).addTo(map).bindPopup('<b>${s.name.replace(/'/g, "\\'")}</b><br/><span style="font-size:12px;color:#666">${s.note.replace(/'/g, "\\'")}</span><br/><div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">${svLink}${navLink}</div>');`;
+      }).addTo(map).bindPopup('<b>${s.name.replace(/'/g, "\\'")}</b><br/><span style="font-size:12px;color:#666">${s.note.replace(/'/g, "\\'")}</span><br/><div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">${svLink}${driveLink}${hikeLink}</div>');`;
     })
     .join('\n');
 
