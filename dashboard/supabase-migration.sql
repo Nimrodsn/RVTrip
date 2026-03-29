@@ -141,3 +141,8 @@ create table if not exists rv_checklist (
 alter publication supabase_realtime add table rv_checklist;
 alter table rv_checklist enable row level security;
 create policy "Allow all on rv_checklist" on rv_checklist for all using (true) with check (true);
+
+-- Add 'ticket' category to documents
+ALTER TABLE documents DROP CONSTRAINT IF EXISTS documents_category_check;
+ALTER TABLE documents ADD CONSTRAINT documents_category_check
+  CHECK (category IN ('flight','insurance','reservation','rental','passport','license','ticket','other'));
