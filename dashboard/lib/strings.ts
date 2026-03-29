@@ -187,4 +187,9 @@ export const strings = {
     locationSharing: 'שיתוף מיקום חי',
     gpsUnavailable: 'GPS לא זמין',
   },
+  offline: {
+    offlineReady: 'האפליקציה זמינה אופליין',
+    offlineBanner: 'אין חיבור לאינטרנט - מצב אופליין',
+    updateAvailable: 'גרסה חדשה זמינה',
+  },
 };

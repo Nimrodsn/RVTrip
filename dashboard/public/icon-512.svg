@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="100" fill="#1a1a2e"/>
+  <g transform="translate(56, 110)">
+    <!-- RV body -->
+    <rect x="20" y="50" width="300" height="160" rx="18" fill="#f9fafb"/>
+    <!-- Cabin -->
+    <path d="M240 50 L360 50 Q380 50 380 70 L380 210 L240 210 Z" fill="#e2e8f0"/>
+    <!-- Windshield -->
+    <path d="M255 65 L345 65 Q360 65 360 80 L360 145 L255 145 Z" fill="#60a5fa" opacity="0.8"/>
+    <!-- Windows -->
+    <rect x="45" y="78" width="60" height="50" rx="6" fill="#60a5fa" opacity="0.7"/>
+    <rect x="125" y="78" width="60" height="50" rx="6" fill="#60a5fa" opacity="0.7"/>
+    <!-- Wheels -->
+    <circle cx="100" cy="220" r="32" fill="#374151"/>
+    <circle cx="100" cy="220" r="14" fill="#9ca3af"/>
+    <circle cx="320" cy="220" r="32" fill="#374151"/>
+    <circle cx="320" cy="220" r="14" fill="#9ca3af"/>
+    <!-- Stripe -->
+    <rect x="20" y="152" width="220" height="10" rx="5" fill="#f59e0b"/>
+  </g>
+</svg>
