@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { itinerary, days, getDateForDay } from '@/lib/itinerary';
 import { strings } from '@/lib/strings';
 import { TYPE_COLORS, TYPE_EMOJI, type DayNote, type CustomStop, type LocationType } from '@/lib/types';
+import { buildMapyCzUrl } from '@/lib/mapyCzUrl';
 
 const TYPE_OPTIONS: { key: LocationType; label: string }[] = [
   { key: 'campsite', label: strings.map.campsite },
@@ -383,7 +384,7 @@ export default function TodayPage() {
                     🚗 {strings.map.navigateDrive} ↗
                   </a>
                   <a
-                    href={`https://mapy.com/fnc/v1/route?end=${loc.coords.lng},${loc.coords.lat}&routeType=foot_hiking&mapset=outdoor`}
+                    href={buildMapyCzUrl(loc.coords.lat, loc.coords.lng, loc.type)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-green-700 hover:underline"
@@ -494,7 +495,7 @@ export default function TodayPage() {
                         🚗 {strings.map.navigateDrive} ↗
                       </a>
                       <a
-                        href={`https://mapy.com/fnc/v1/route?end=${stop.coords.lng},${stop.coords.lat}&routeType=foot_hiking&mapset=outdoor`}
+                        href={buildMapyCzUrl(stop.coords.lat, stop.coords.lng, stop.type)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs text-green-700 hover:underline"

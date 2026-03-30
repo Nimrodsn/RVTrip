@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { itinerary, days, getDateForDay } from '@/lib/itinerary';
 import { TYPE_COLORS, TYPE_EMOJI, type LocationType, type ItineraryLocation, type RvLocation } from '@/lib/types';
 import { strings } from '@/lib/strings';
+import { buildMapyCzUrl } from '@/lib/mapyCzUrl';
 
 const TYPE_LABELS: Record<LocationType, string> = {
   campsite: strings.map.campsite,
@@ -197,7 +198,7 @@ export default function MapView({ customStops = [], editMode = false, onMapClick
                       🚗 {strings.map.navigateDrive} ↗
                     </a>
                     <a
-                      href={`https://mapy.com/fnc/v1/route?end=${loc.coords.lng},${loc.coords.lat}&routeType=foot_hiking&mapset=outdoor`}
+                      href={buildMapyCzUrl(loc.coords.lat, loc.coords.lng, loc.type)}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
@@ -254,7 +255,7 @@ export default function MapView({ customStops = [], editMode = false, onMapClick
                         🚗 {strings.map.navigateDrive} ↗
                       </a>
                       <a
-                        href={`https://mapy.com/fnc/v1/route?end=${s.lng},${s.lat}&routeType=foot_hiking&mapset=outdoor`}
+                        href={buildMapyCzUrl(s.lat, s.lng, s.type)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs text-green-700 hover:underline"
@@ -287,7 +288,9 @@ function buildFullMapHtml(
         : '';
       const svLink = `<a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${loc.coords.lat},${loc.coords.lng}" target="_blank" style="color:#2563eb;font-size:12px">📷 Street View</a> `;
       const driveLink = `<a href="https://www.google.com/maps/dir/?api=1&destination=${loc.coords.lat},${loc.coords.lng}" target="_blank" style="color:#2563eb;font-size:12px">🚗 נווט ברכב</a>`;
-      const hikeLink = `<a href="https://mapy.com/fnc/v1/route?end=${loc.coords.lng},${loc.coords.lat}&routeType=foot_hiking&mapset=outdoor" target="_blank" style="color:#15803d;font-size:12px">🥾 שבילי הליכה</a>`;
+      const hikeBase = `https://mapy.cz/fnc/v1/route?start=auto&end=${loc.coords.lng}%2C${loc.coords.lat}&routeType=foot_hiking&mapset=outdoor&base=outdoor-hiking`;
+      const hikeUrl = loc.type === 'attraction' ? `${hikeBase}&center=${loc.coords.lng}%2C${loc.coords.lat}&zoom=16` : hikeBase;
+      const hikeLink = `<a href="${hikeUrl}" target="_blank" style="color:#15803d;font-size:12px">🥾 שבילי הליכה</a>`;
       return `L.circleMarker([${loc.coords.lat}, ${loc.coords.lng}], {
         radius: 9, fillColor: '${c.dot}', color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.9
       }).addTo(map).bindPopup('<b>${loc.name.replace(/'/g, "\\'")}</b><br/><span style="font-size:12px;color:#666">${loc.note.replace(/'/g, "\\'")}</span><br/><div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">${urlLink}${svLink}${driveLink}${hikeLink}</div>');`;
@@ -299,7 +302,9 @@ function buildFullMapHtml(
       const c = TYPE_COLORS[s.type as LocationType] || TYPE_COLORS.supply;
       const svLink = s.lat !== 0 ? `<a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${s.lat},${s.lng}" target="_blank" style="color:#2563eb;font-size:12px">📷 Street View</a> ` : '';
       const driveLink = s.lat !== 0 ? `<a href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}" target="_blank" style="color:#2563eb;font-size:12px">🚗 נווט ברכב</a>` : '';
-      const hikeLink = s.lat !== 0 ? `<a href="https://mapy.com/fnc/v1/route?end=${s.lng},${s.lat}&routeType=foot_hiking&mapset=outdoor" target="_blank" style="color:#15803d;font-size:12px">🥾 שבילי הליכה</a>` : '';
+      const customHikeBase = `https://mapy.cz/fnc/v1/route?start=auto&end=${s.lng}%2C${s.lat}&routeType=foot_hiking&mapset=outdoor&base=outdoor-hiking`;
+      const customHikeUrl = (s.type as string) === 'attraction' ? `${customHikeBase}&center=${s.lng}%2C${s.lat}&zoom=16` : customHikeBase;
+      const hikeLink = s.lat !== 0 ? `<a href="${customHikeUrl}" target="_blank" style="color:#15803d;font-size:12px">🥾 שבילי הליכה</a>` : '';
       return `L.circleMarker([${s.lat}, ${s.lng}], {
         radius: 9, fillColor: '${c.dot}', color: '#ff0', weight: 3, opacity: 1, fillOpacity: 0.9
       }).addTo(map).bindPopup('<b>${s.name.replace(/'/g, "\\'")}</b><br/><span style="font-size:12px;color:#666">${s.note.replace(/'/g, "\\'")}</span><br/><div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">${svLink}${driveLink}${hikeLink}</div>');`;
