@@ -35,6 +35,13 @@ export default function MapView({ customStops = [], editMode = false, onMapClick
   const [filterType, setFilterType] = useState<LocationType | null>(null);
   const [selected, setSelected] = useState<ItineraryLocation | null>(null);
   const [showHeightLayer, setShowHeightLayer] = useState(true);
+  const [showControls, setShowControls] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setShowControls(false);
+    }
+  }, []);
 
   const handleMessage = useCallback(
     (e: MessageEvent) => {
@@ -63,8 +70,19 @@ export default function MapView({ customStops = [], editMode = false, onMapClick
 
   return (
     <div className="flex flex-col h-full">
+      {/* Mobile toggle for filters/legend */}
+      <button
+        onClick={() => setShowControls((v) => !v)}
+        className="lg:hidden flex items-center justify-center gap-2 px-4 py-2 bg-white border-b border-gray-100 text-sm font-medium text-gray-600 active:bg-gray-50"
+      >
+        <svg className={`w-4 h-4 transition-transform ${showControls ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+        {showControls ? strings.map.hideFilters : strings.map.showFilters}
+      </button>
+
       {/* Filter Bar */}
-      <div className="flex flex-wrap gap-3 p-4 bg-white border-b border-gray-100">
+      <div className={`flex-wrap gap-3 p-4 bg-white border-b border-gray-100 ${showControls ? 'flex' : 'hidden lg:flex'}`}>
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-gray-500">{strings.map.filterByDay}:</span>
           <button
@@ -115,7 +133,7 @@ export default function MapView({ customStops = [], editMode = false, onMapClick
 
       {/* Height restriction legend */}
       {showHeightLayer && (
-        <div className="flex flex-wrap items-center gap-4 px-4 py-2 bg-gray-50 border-b border-gray-100 text-xs">
+        <div className={`flex-wrap items-center gap-4 px-4 py-2 bg-gray-50 border-b border-gray-100 text-xs ${showControls ? 'flex' : 'hidden lg:flex'}`}>
           <span className="font-semibold text-gray-600">{strings.map.heightToggle}:</span>
           <span className="flex items-center gap-1.5">
             <span className="w-5 h-1 rounded bg-red-600 inline-block" />

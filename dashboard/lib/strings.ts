@@ -52,6 +52,8 @@ export const strings = {
     heightRisky: 'מסוכן',
     rvHeight: 'גובה הרכב',
     loading: 'טוען...',
+    showFilters: 'הצג מסננים',
+    hideFilters: 'הסתר מסננים',
   },
   checklist: {
     title: 'בדיקה לפני יציאה',
