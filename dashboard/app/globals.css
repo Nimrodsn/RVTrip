@@ -11,6 +11,9 @@
 body {
   font-family: var(--font-sans);
   direction: rtl;
+  /* Faint dot grid so the white cards read as raised without adding any motion. */
+  background-image: radial-gradient(circle at 1px 1px, rgba(15, 23, 42, 0.05) 1px, transparent 0);
+  background-size: 22px 22px;
 }
 
 * {
@@ -31,6 +34,7 @@ html.driving-mode {
 
 html.driving-mode body {
   background-color: #ffffff;
+  background-image: none;
 }
 
 html.driving-mode p,
@@ -129,4 +133,40 @@ html.driving-mode .rounded-full {
   padding-left: 1rem;
   padding-right: 1rem;
   font-size: 0.9rem;
+}
+
+/* ── Decorative Motion Kill Switch ── */
+
+/*
+ * Components guard themselves with useMotionEnabled; this is the hard stop that also covers
+ * any animation still running when driving mode is switched on mid-transition.
+ */
+html.driving-mode [data-motion],
+html.driving-mode .rb-motion,
+html.driving-mode .spotlight-card,
+html.driving-mode .glare-card,
+html.driving-mode .animated-list-item,
+html.driving-mode .blur-text > span {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-motion],
+  .rb-motion,
+  .spotlight-card,
+  .glare-card,
+  .animated-list-item,
+  .blur-text > span {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    filter: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
 }

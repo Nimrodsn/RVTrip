@@ -4,6 +4,15 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { strings } from '@/lib/strings';
 import type { DocEntry, DocCategory } from '@/lib/types';
+import PageHeader from '@/components/PageHeader';
+import EmptyState from '@/components/EmptyState';
+import Reveal from '@/components/ui/Reveal';
+import StaggerList from '@/components/ui/StaggerList';
+import Card, { CARD_SURFACE } from '@/components/ui/Card';
+import Button, { buttonClasses } from '@/components/ui/Button';
+import FilterPills from '@/components/ui/FilterPills';
+import AccordionSection from '@/components/ui/AccordionSection';
+import { cn } from '@/lib/utils';
 
 const CACHE_NAME = 'rv-tickets-v1';
 
@@ -46,6 +55,9 @@ const DOC_CATEGORIES: { key: DocCategory; label: string; emoji: string }[] = [
 const CATEGORY_LABELS: Record<DocCategory, string> = Object.fromEntries(
   DOC_CATEGORIES.map((c) => [c.key, c.label])
 ) as Record<DocCategory, string>;
+
+/** Sentinel for the "all" pill, since the filter itself is a nullable category. */
+const ALL_CATEGORIES = '__all__';
 
 export default function DocumentsPage() {
   const [docs, setDocs] = useState<DocEntry[]>([]);
@@ -180,20 +192,21 @@ export default function DocumentsPage() {
   const ticketDocs = docs.filter((d) => d.category === 'ticket');
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-extrabold text-primary">{strings.documents.title}</h1>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-gray-800 transition-colors"
-        >
-          {showForm ? strings.documents.cancel : strings.documents.addDocument}
-        </button>
+    <div className="p-4 sm:p-8 max-w-5xl mx-auto">
+      <div className="mb-6">
+        <PageHeader
+          title={strings.documents.title}
+          action={
+            <Button onClick={() => setShowForm(!showForm)}>
+              {showForm ? strings.documents.cancel : strings.documents.addDocument}
+            </Button>
+          }
+        />
       </div>
 
       {/* Upload Form */}
       {showForm && (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
+        <Reveal duration={250} className={cn(CARD_SURFACE, 'p-6 mb-6')}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1">{strings.documents.pickFile}</label>
@@ -228,29 +241,29 @@ export default function DocumentsPage() {
               />
             </div>
           </div>
-          <button
-            onClick={uploadDoc}
-            disabled={!file || uploading}
-            className="px-6 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-gray-800 transition-colors disabled:opacity-50"
-          >
+          <Button onClick={uploadDoc} disabled={!file || uploading} className="px-6">
             {uploading ? 'מעלה...' : strings.documents.save}
-          </button>
-        </div>
+          </Button>
+        </Reveal>
       )}
 
       {/* Quick Tickets Banner */}
       {ticketDocs.length > 0 && (
-        <div className="bg-amber-50 rounded-xl border-2 border-amber-200 p-5 mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-amber-900 text-sm flex items-center gap-2">
-              🎫 {strings.documents.offlineTickets}
-            </h2>
-            <button
+        <AccordionSection
+          defaultOpen
+          className="mb-6 border-2 border-amber-200 bg-amber-50"
+          contentClassName="border-amber-200"
+          title={<span className="text-amber-900">🎫 {strings.documents.offlineTickets}</span>}
+          meta={<span className="text-xs font-medium text-amber-700">{ticketDocs.length}</span>}
+        >
+          <div className="mb-3 flex justify-end">
+            <Button
+              size="sm"
               onClick={handleCacheAll}
-              className="px-3 py-1.5 bg-amber-200 text-amber-800 rounded-lg text-xs font-semibold hover:bg-amber-300 transition-colors"
+              className="bg-amber-200 text-amber-800 hover:bg-amber-300"
             >
               {strings.documents.cacheAll}
-            </button>
+            </Button>
           </div>
           <div className="space-y-2">
             {ticketDocs.map((doc) => {
@@ -275,70 +288,65 @@ export default function DocumentsPage() {
                   </div>
                   <div className="flex gap-2 shrink-0">
                     {!isCached && (
-                      <button
+                      <Button
+                        size="sm"
                         onClick={() => handleCache(doc)}
                         disabled={isCaching}
-                        className="px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-xs font-medium hover:bg-amber-200 transition-colors disabled:opacity-50"
+                        className="bg-amber-100 text-amber-700 hover:bg-amber-200"
                       >
                         {isCaching ? '...' : strings.documents.saveOffline}
-                      </button>
+                      </Button>
                     )}
-                    <button
+                    <Button
+                      size="sm"
                       onClick={() => openTicketViewer(doc)}
-                      className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors"
+                      className="bg-blue-600 text-white hover:bg-blue-700"
                     >
                       {strings.documents.viewTicket}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
+        </AccordionSection>
       )}
 
       {/* Category Filter Tabs */}
-      <div className="flex gap-2 mb-6 flex-wrap">
-        <button
-          onClick={() => setFilterCat(null)}
-          className={`px-3 py-1.5 text-xs rounded-full font-medium transition-colors ${
-            filterCat === null ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
-        >
-          הכל ({docs.length})
-        </button>
-        {DOC_CATEGORIES.map((cat) => {
-          const count = docs.filter((d) => d.category === cat.key).length;
-          return (
-            <button
-              key={cat.key}
-              onClick={() => setFilterCat(cat.key)}
-              className={`px-3 py-1.5 text-xs rounded-full font-medium transition-colors ${
-                filterCat === cat.key
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {cat.emoji} {cat.label} ({count})
-            </button>
-          );
-        })}
-      </div>
+      <FilterPills
+        className="mb-6"
+        size="sm"
+        layoutId="documents-category-pill"
+        ariaLabel={strings.documents.category}
+        activeValue={filterCat ?? ALL_CATEGORIES}
+        onChange={(value) => setFilterCat(value === ALL_CATEGORIES ? null : (value as DocCategory))}
+        items={[
+          { value: ALL_CATEGORIES, label: `${strings.map.filterAll} (${docs.length})` },
+          ...DOC_CATEGORIES.map((cat) => ({
+            value: cat.key,
+            label: `${cat.emoji} ${cat.label} (${docs.filter((d) => d.category === cat.key).length})`,
+          })),
+        ]}
+      />
 
       {/* Document List */}
       {filtered.length === 0 ? (
-        <p className="text-center text-gray-400 py-12">{strings.documents.noDocs}</p>
+        <Card>
+          <EmptyState
+            emoji="📎"
+            title={strings.documents.noDocs}
+            description={strings.documents.emptyHint}
+            action={<Button onClick={() => setShowForm(true)}>{strings.documents.addDocument}</Button>}
+          />
+        </Card>
       ) : (
-        <div className="space-y-3">
+        <StaggerList className="space-y-3">
           {filtered.map((doc) => {
             const url = getPublicUrl(doc.storage_path);
             const isCached = cachedUrls.has(url);
             const isCaching = cachingUrl === url;
             return (
-              <div
-                key={doc.id}
-                className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm"
-              >
+              <Card key={doc.id} interactive className="flex items-center gap-4 p-4">
                 <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-lg shrink-0">
                   {DOC_CATEGORIES.find((c) => c.key === doc.category)?.emoji || '📄'}
                 </div>
@@ -356,50 +364,57 @@ export default function DocumentsPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex gap-2 shrink-0 flex-wrap">
+                <div className="relative z-10 flex gap-2 shrink-0 flex-wrap">
                   {!isCached ? (
-                    <button
+                    <Button
+                      size="sm"
                       onClick={() => handleCache(doc)}
                       disabled={isCaching}
-                      className="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-medium hover:bg-amber-100 transition-colors disabled:opacity-50"
+                      className="bg-amber-50 text-amber-700 hover:bg-amber-100"
                     >
                       {isCaching ? '...' : strings.documents.saveOffline}
-                    </button>
+                    </Button>
                   ) : (
-                    <button
+                    <Button
+                      size="sm"
                       onClick={() => handleUncache(doc)}
-                      className="px-3 py-1.5 bg-gray-50 text-gray-500 rounded-lg text-xs font-medium hover:bg-gray-100 transition-colors"
+                      className="bg-gray-50 text-gray-500 hover:bg-gray-100"
                     >
                       {strings.documents.removeCached}
-                    </button>
+                    </Button>
                   )}
                   {doc.category === 'ticket' && (
-                    <button
+                    <Button
+                      size="sm"
                       onClick={() => openTicketViewer(doc)}
-                      className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors"
+                      className="bg-blue-600 text-white hover:bg-blue-700"
                     >
                       {strings.documents.viewTicket}
-                    </button>
+                    </Button>
                   )}
                   <a
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium hover:bg-blue-100 transition-colors"
+                    className={buttonClasses({
+                      size: 'sm',
+                      className: 'bg-blue-50 text-blue-600 hover:bg-blue-100',
+                    })}
                   >
                     {strings.documents.open} ↗
                   </a>
-                  <button
+                  <Button
+                    size="sm"
                     onClick={() => deleteDoc(doc)}
-                    className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 transition-colors"
+                    className="bg-red-50 text-red-600 hover:bg-red-100"
                   >
                     {strings.documents.delete}
-                  </button>
+                  </Button>
                 </div>
-              </div>
+              </Card>
             );
           })}
-        </div>
+        </StaggerList>
       )}
 
       {/* Full-Screen Ticket Viewer Overlay */}

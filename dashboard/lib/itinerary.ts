@@ -36,6 +36,21 @@ export function getDateForDay(day: number): string {
   return `${weekday} ${dd}.${mm}`;
 }
 
+/** Trip day matching the real calendar date, or null when today falls outside the trip. */
+export function getCurrentTripDay(): number | null {
+  const day = getDayOffsetFromToday() + 1;
+  return day >= 1 && day <= days.length ? day : null;
+}
+
+/** Whole days between the trip start and today; negative before the trip begins. */
+export function getDayOffsetFromToday(): number {
+  const start = new Date(itinerary.start_date);
+  start.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.round((today.getTime() - start.getTime()) / 86_400_000);
+}
+
 export function getTripDateRange(): string {
   const start = new Date(itinerary.start_date);
   const end = new Date(itinerary.start_date);

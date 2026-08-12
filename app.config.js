@@ -32,6 +32,11 @@ module.exports = ({ config }) => ({
     web: {
       favicon: './assets/favicon.png',
       bundler: 'metro',
+      name: 'RVTrip',
+      shortName: 'RVTrip',
+      description: 'Dashboard for the Czechia-Slovakia RV Convoy 2026',
+      themeColor: '#1a1a2e',
+      backgroundColor: '#f9fafb',
     },
     plugins: ['expo-router'],
     extra: {

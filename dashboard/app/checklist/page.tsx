@@ -1,8 +1,18 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { motion } from 'motion/react';
 import { supabase } from '@/lib/supabase';
 import { strings } from '@/lib/strings';
+import { cn } from '@/lib/utils';
+import { useMotionEnabled } from '@/lib/useMotionEnabled';
+import PageHeader from '@/components/PageHeader';
+import { SkeletonCards } from '@/components/Skeleton';
+import ProgressSteps from '@/components/react-bits/ProgressSteps';
+import StaggerList from '@/components/ui/StaggerList';
+import SpotlightTile from '@/components/ui/SpotlightTile';
+import HighlightBanner from '@/components/ui/HighlightBanner';
+import Button from '@/components/ui/Button';
 
 const CHECKLIST_ITEMS = [
   { key: 'roofHatch', label: strings.checklist.roofHatch, emoji: '🏠' },
@@ -17,11 +27,17 @@ const CHECKLIST_ITEMS = [
 
 type RvId = 'rv1' | 'rv2';
 
+const RV_OPTIONS: { id: RvId; label: string; badge: string }[] = [
+  { id: 'rv1', label: strings.liveLocation.rv1, badge: 'bg-blue-600' },
+  { id: 'rv2', label: strings.liveLocation.rv2, badge: 'bg-purple-600' },
+];
+
 export default function ChecklistPage() {
   const [rvId, setRvId] = useState<RvId | null>(null);
   const [myState, setMyState] = useState<Record<string, boolean>>({});
   const [otherState, setOtherState] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
+  const motionEnabled = useMotionEnabled();
 
   const otherId: RvId | null = rvId === 'rv1' ? 'rv2' : rvId === 'rv2' ? 'rv1' : null;
 
@@ -99,41 +115,48 @@ export default function ChecklistPage() {
   // RV selector screen
   if (!rvId) {
     return (
-      <div className="p-8 max-w-2xl mx-auto">
-        <h1 className="text-2xl font-extrabold text-primary mb-6">{strings.checklist.title}</h1>
-        <div className="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center">
-          <p className="text-lg font-semibold text-gray-700 mb-2">{strings.checklist.selectRv}</p>
-          <p className="text-sm text-gray-500 mb-6">{strings.checklist.noRvSelected}</p>
-          <div className="flex justify-center gap-4">
-            <button
-              onClick={() => selectRv('rv1')}
-              className="px-6 py-3 rounded-xl bg-blue-600 text-white font-bold text-lg hover:bg-blue-700 transition-colors"
-            >
-              {strings.liveLocation.rv1}
-            </button>
-            <button
-              onClick={() => selectRv('rv2')}
-              className="px-6 py-3 rounded-xl bg-purple-600 text-white font-bold text-lg hover:bg-purple-700 transition-colors"
-            >
-              {strings.liveLocation.rv2}
-            </button>
-          </div>
-        </div>
+      <div className="p-4 sm:p-8 max-w-2xl mx-auto">
+        <PageHeader
+          title={strings.checklist.title}
+          subtitle={strings.checklist.selectRv}
+          meta={strings.checklist.noRvSelected}
+        />
+        <StaggerList className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {RV_OPTIONS.map((rv) => (
+            <SpotlightTile key={rv.id} className="h-full">
+              <button
+                onClick={() => selectRv(rv.id)}
+                className="flex w-full flex-col items-center gap-3 rounded-xl p-8 transition-transform hover:-translate-y-0.5"
+              >
+                <span className="text-4xl" aria-hidden>
+                  🚐
+                </span>
+                <span className={cn('rounded-full px-4 py-1.5 text-base font-bold text-white', rv.badge)}>
+                  {rv.label}
+                </span>
+              </button>
+            </SpotlightTile>
+          ))}
+        </StaggerList>
       </div>
     );
   }
 
   return (
-    <div className="p-8 max-w-2xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <h1 className="text-2xl font-extrabold text-primary">{strings.checklist.title}</h1>
-        <span
-          className={`px-3 py-1 rounded-full text-xs font-bold text-white ${
-            rvId === 'rv1' ? 'bg-blue-600' : 'bg-purple-600'
-          }`}
-        >
-          {myLabel}
-        </span>
+    <div className="p-4 sm:p-8 max-w-2xl mx-auto">
+      <div className="mb-6">
+        <PageHeader
+          title={strings.checklist.title}
+          action={
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-bold text-white ${
+                rvId === 'rv1' ? 'bg-blue-600' : 'bg-purple-600'
+              }`}
+            >
+              {myLabel}
+            </span>
+          }
+        />
       </div>
 
       {/* Other RV status indicator */}
@@ -172,61 +195,78 @@ export default function ChecklistPage() {
           <span className="text-sm font-semibold text-gray-600">
             {strings.checklist.completed}: {doneCount}/{CHECKLIST_ITEMS.length}
           </span>
-          {allDone && (
-            <span className="text-sm font-bold text-green-600">✅ {strings.checklist.allDone}</span>
-          )}
         </div>
-        <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{
-              width: `${(doneCount / CHECKLIST_ITEMS.length) * 100}%`,
-              backgroundColor: allDone ? '#2e7d32' : '#1a1a1a',
-            }}
-          />
-        </div>
+        <ProgressSteps
+          steps={CHECKLIST_ITEMS.map((item) => ({ label: item.label, complete: !!myState[item.key] }))}
+          onStepClick={(index) => toggle(CHECKLIST_ITEMS[index].key)}
+        />
       </div>
 
+      {allDone && (
+        <HighlightBanner tone="green" className="mb-6" contentClassName="p-4 text-center font-bold">
+          ✅ {strings.checklist.allDone}
+        </HighlightBanner>
+      )}
+
       {loading ? (
-        <div className="text-center py-12 text-gray-400">טוען...</div>
+        <SkeletonCards count={4} />
       ) : (
-        <div className="space-y-3">
-          {CHECKLIST_ITEMS.map((item) => (
-            <button
-              key={item.key}
-              onClick={() => toggle(item.key)}
-              className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-all ${
-                myState[item.key]
-                  ? 'bg-green-50 border-green-200'
-                  : 'bg-white border-gray-100 hover:border-gray-200'
-              }`}
-            >
-              <div
-                className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg transition-colors ${
-                  myState[item.key] ? 'bg-green-200' : 'bg-gray-100'
-                }`}
+        <StaggerList className="space-y-3">
+          {CHECKLIST_ITEMS.map((item) => {
+            const checked = !!myState[item.key];
+            return (
+              <button
+                key={item.key}
+                onClick={() => toggle(item.key)}
+                aria-pressed={checked}
+                className={cn(
+                  'flex w-full items-center gap-4 rounded-xl border p-4 transition-all',
+                  checked ? 'bg-green-50 border-green-200' : 'bg-white border-gray-100 hover:border-gray-200'
+                )}
               >
-                {myState[item.key] ? '✅' : item.emoji}
-              </div>
-              <span
-                className={`text-sm font-semibold ${
-                  myState[item.key] ? 'text-green-700 line-through' : 'text-primary'
-                }`}
-              >
-                {item.label}
-              </span>
-            </button>
-          ))}
-        </div>
+                <ItemIcon checked={checked} emoji={item.emoji} animated={motionEnabled} />
+                <span
+                  className={cn(
+                    'text-sm font-semibold',
+                    checked ? 'text-green-700 line-through' : 'text-primary'
+                  )}
+                >
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+        </StaggerList>
       )}
 
       {/* Reset */}
-      <button
-        onClick={resetAll}
-        className="mt-8 w-full py-3 bg-gray-100 text-gray-600 rounded-xl font-semibold text-sm hover:bg-gray-200 transition-colors"
-      >
+      <Button variant="secondary" onClick={resetAll} className="mt-8 w-full rounded-xl text-gray-600">
         {strings.checklist.resetAll}
-      </button>
+      </Button>
     </div>
+  );
+}
+
+/** Gives the checkbox a quick pop when it flips, so a tap registers at a glance. */
+function ItemIcon({ checked, emoji, animated }: { checked: boolean; emoji: string; animated: boolean }) {
+  const className = cn(
+    'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-lg transition-colors',
+    checked ? 'bg-green-200' : 'bg-gray-100'
+  );
+  const content = checked ? '✅' : emoji;
+
+  if (!animated) {
+    return <div className={className}>{content}</div>;
+  }
+
+  return (
+    <motion.div
+      data-motion=""
+      className={className}
+      animate={{ scale: checked ? [1, 1.2, 1] : 1 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+    >
+      {content}
+    </motion.div>
   );
 }

@@ -1,4 +1,4 @@
-const APP_SHELL_CACHE = 'rv-app-shell-v1';
+const APP_SHELL_CACHE = 'rv-app-shell-v2';
 const DATA_CACHE = 'rv-data-v1';
 const MAP_CACHE = 'rv-map-tiles-v1';
 const FONT_CACHE = 'rv-fonts-v1';
@@ -17,6 +17,11 @@ const PRECACHE_URLS = [
   '/weather',
   '/journal',
   '/commander',
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/apple-touch-icon.png',
+  '/favicon.png',
 ];
 
 self.addEventListener('install', (event) => {

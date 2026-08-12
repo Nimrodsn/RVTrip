@@ -1,4 +1,9 @@
 export const strings = {
+  common: {
+    loading: 'טוען...',
+    loadFailed: 'הטעינה נכשלה',
+    retry: 'נסה שוב',
+  },
   home: {
     title: 'מפקד השיירה',
     tripName: 'צ\'כיה-סלובקיה RV 2026',
@@ -19,6 +24,13 @@ export const strings = {
     documents: 'מסמכים',
     checklistWarning: 'הבדיקה לא הושלמה!',
     checklistOk: 'מוכנים ליציאה',
+    atGlance: 'מה קורה עכשיו',
+    dayOf: 'יום',
+    outOf: 'מתוך',
+    daysToGo: 'ימים עד היציאה',
+    tripEnded: 'הטיול הסתיים',
+    stopsToday: 'תחנות היום',
+    viewDayPlan: 'לתוכנית המלאה',
   },
   map: {
     viewEntrance: 'צפייה בכניסה',
@@ -116,6 +128,7 @@ export const strings = {
     deleteStop: 'הסר תחנה',
     restoreStops: 'שחזר תחנות',
     hiddenCount: 'תחנות מוסתרות',
+    emptyDayHint: 'אין תחנות מתוכננות ליום זה. אפשר להוסיף תחנה או פריט משלכם.',
   },
   weather: {
     title: 'מזג אוויר',
@@ -124,6 +137,7 @@ export const strings = {
     rain: 'גשם',
     mm: 'מ"מ',
     forecast: 'תחזית לאזור הבא',
+    offlineHint: 'לא הצלחנו להביא את התחזית. בדקו את החיבור לאינטרנט ונסו שוב.',
   },
   budget: {
     title: 'תקציב והוצאות',
@@ -139,6 +153,7 @@ export const strings = {
     note: 'הערה',
     day: 'יום',
     noExpenses: 'אין הוצאות עדיין',
+    emptyHint: 'הוסיפו הוצאה ראשונה כדי לעקוב אחרי התקציב של השיירה.',
     delete: 'מחק',
     converter: 'ממיר מטבעות',
     from: 'מ-',
@@ -153,6 +168,7 @@ export const strings = {
     pickPhoto: 'בחר מגלריה',
     addNote: 'הוסף הערה...',
     noPhotos: 'אין תמונות עדיין',
+    emptyHint: 'העלו תמונה ראשונה כדי להתחיל את יומן הטיול.',
     save: 'שמור',
     delete: 'מחק',
   },
@@ -160,6 +176,7 @@ export const strings = {
     title: 'מסמכי נסיעה',
     addDocument: 'הוסף מסמך',
     noDocs: 'אין מסמכים עדיין',
+    emptyHint: 'העלו דרכונים, ביטוח וכרטיסים כדי שיהיו זמינים גם ללא אינטרנט.',
     flight: 'כרטיסי טיסה',
     insurance: 'ביטוח',
     reservation: 'הזמנה',

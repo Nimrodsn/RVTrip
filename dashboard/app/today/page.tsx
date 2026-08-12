@@ -5,7 +5,14 @@ import { supabase } from '@/lib/supabase';
 import { itinerary, days, getDateForDay } from '@/lib/itinerary';
 import { strings } from '@/lib/strings';
 import { TYPE_COLORS, TYPE_EMOJI, type DayNote, type CustomStop, type LocationType } from '@/lib/types';
-import { buildMapyCzUrl } from '@/lib/mapyCzUrl';
+import PageHeader from '@/components/PageHeader';
+import EmptyState from '@/components/EmptyState';
+import StopActions from '@/components/StopActions';
+import FilterPills from '@/components/ui/FilterPills';
+import StaggerList from '@/components/ui/StaggerList';
+import Reveal from '@/components/ui/Reveal';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
 
 const TYPE_OPTIONS: { key: LocationType; label: string }[] = [
   { key: 'campsite', label: strings.map.campsite },
@@ -75,6 +82,7 @@ export default function TodayPage() {
   );
   const dayCustomStops = customStops.filter((s) => s.day === selectedDay);
   const dayCustomNotes = dayNotes.filter((n) => n.day === selectedDay);
+  const isDayEmpty = dayLocations.length === 0 && dayCustomStops.length === 0 && dayCustomNotes.length === 0;
 
   async function saveStopEdit(stopKey: string, name: string, note: string) {
     const payload = JSON.stringify({ name: name || undefined, note: note || undefined });
@@ -153,64 +161,42 @@ export default function TodayPage() {
 
   return (
     <div className="p-4 sm:p-8 max-w-4xl mx-auto">
-      <div className="flex items-baseline gap-3 mb-6 flex-wrap">
-        <h1 className="text-2xl font-extrabold text-primary">{strings.today.title}</h1>
-        <span className="text-sm text-gray-500 font-medium">
-          {strings.budget.day} {selectedDay} — {getDateForDay(selectedDay)}
-        </span>
-      </div>
+      <PageHeader
+        title={strings.today.title}
+        subtitle={`${strings.budget.day} ${selectedDay} — ${getDateForDay(selectedDay)}`}
+      />
 
       {/* Day Selector */}
-      <div className="flex gap-2 mb-6 flex-wrap">
-        {days.map((d) => (
-          <button
-            key={d}
-            onClick={() => setSelectedDay(d)}
-            className={`flex flex-col items-center px-3 py-2 rounded-xl font-bold text-sm transition-colors ${
-              selectedDay === d
-                ? 'bg-primary text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            <span>{d}</span>
-            <span className={`text-[10px] font-medium ${selectedDay === d ? 'text-white/80' : 'text-gray-400'}`}>
-              {getDateForDay(d).split(' ')[1]}
-            </span>
-          </button>
-        ))}
+      <div className="my-6">
+        <FilterPills
+          items={days.map((d) => ({ value: d, label: `${d} · ${getDateForDay(d).split(' ')[1]}` }))}
+          activeValue={selectedDay}
+          onChange={setSelectedDay}
+          layoutId="today-day-pill"
+          ariaLabel={strings.today.selectDay}
+        />
       </div>
 
       {/* Toolbar */}
       <div className="flex items-center gap-3 mb-6 flex-wrap">
-        <button
-          onClick={() => setEditing(!editing)}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-            editing ? 'bg-primary text-white' : 'bg-gray-100 text-primary hover:bg-gray-200'
-          }`}
-        >
+        <Button variant={editing ? 'primary' : 'secondary'} onClick={() => setEditing(!editing)}>
           {editing ? strings.today.donEditing : strings.today.editPlan}
-        </button>
+        </Button>
         {editing && (
-          <button
-            onClick={() => setShowAddStop(!showAddStop)}
-            className="px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-semibold hover:bg-green-100 transition-colors"
-          >
+          <Button variant="success" onClick={() => setShowAddStop(!showAddStop)}>
             {showAddStop ? strings.today.cancel : strings.map.addStop}
-          </button>
+          </Button>
         )}
         {hiddenStops.length > 0 && (
-          <button
-            onClick={restoreStops}
-            className="px-4 py-2 bg-orange-50 text-orange-700 rounded-lg text-sm font-semibold hover:bg-orange-100 transition-colors"
-          >
+          <Button variant="warning" onClick={restoreStops}>
             {strings.today.restoreStops} ({hiddenStops.length})
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Add Custom Stop Form */}
       {showAddStop && (
-        <div className="mb-6 p-4 bg-green-50 rounded-xl border border-green-100">
+        <Reveal duration={250} className="mb-6 p-4 bg-green-50 rounded-xl border border-green-100">
           <h3 className="font-semibold text-green-800 mb-3">{strings.map.addStop} - {strings.budget.day} {selectedDay}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <input
@@ -251,22 +237,30 @@ export default function TodayPage() {
             onChange={(e) => setNewStop({ ...newStop, note: e.target.value })}
             className="w-full px-3 py-2 border rounded-lg text-sm mb-3"
           />
-          <button
+          <Button
             onClick={addCustomStop}
             disabled={!newStop.name.trim()}
-            className="px-4 py-2 bg-green-700 text-white rounded-lg text-sm font-semibold hover:bg-green-800 transition-colors disabled:opacity-50"
+            className="bg-green-700 text-white hover:bg-green-800"
           >
             {strings.today.save}
-          </button>
-        </div>
+          </Button>
+        </Reveal>
       )}
 
       {/* Timeline */}
-      <div className="space-y-3">
-        {dayLocations.length === 0 && dayCustomStops.length === 0 && dayCustomNotes.length === 0 && (
-          <p className="text-gray-400 text-center py-8">{strings.today.noStops}</p>
-        )}
-
+      {isDayEmpty ? (
+        <Card>
+          <EmptyState
+            emoji="🗓️"
+            title={strings.today.noStops}
+            description={strings.today.emptyDayHint}
+            action={
+              !editing ? <Button onClick={() => setEditing(true)}>{strings.today.editPlan}</Button> : undefined
+            }
+          />
+        </Card>
+      ) : (
+      <StaggerList key={selectedDay} className="space-y-3">
         {/* Itinerary stops */}
         {dayLocations.map((loc, i) => {
           const key = `${loc.day}-${loc.name}`;
@@ -276,10 +270,7 @@ export default function TodayPage() {
           const isEditing = editingStop?.key === key;
 
           return (
-            <div
-              key={key}
-              className="p-4 bg-white rounded-xl border border-gray-100 shadow-sm"
-            >
+            <Card key={key} interactive className="p-4">
               <div className="flex items-start gap-3">
                 <div
                   className="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0"
@@ -303,18 +294,12 @@ export default function TodayPage() {
                         placeholder={strings.map.note}
                       />
                       <div className="flex gap-2">
-                        <button
-                          onClick={() => saveStopEdit(key, editingStop.name, editingStop.note)}
-                          className="px-3 py-1.5 bg-primary text-white rounded-lg text-sm font-medium"
-                        >
+                        <Button size="sm" onClick={() => saveStopEdit(key, editingStop.name, editingStop.note)}>
                           {strings.today.save}
-                        </button>
-                        <button
-                          onClick={() => setEditingStop(null)}
-                          className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium"
-                        >
+                        </Button>
+                        <Button size="sm" variant="secondary" onClick={() => setEditingStop(null)}>
                           {strings.today.cancel}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ) : (
@@ -340,7 +325,7 @@ export default function TodayPage() {
                     </>
                   )}
                 </div>
-                <div className="flex flex-col gap-1 shrink-0">
+                <div className="flex flex-col gap-1.5 shrink-0 w-[130px]">
                   {editing && !isEditing && (
                     <>
                       <button
@@ -357,43 +342,10 @@ export default function TodayPage() {
                       </button>
                     </>
                   )}
-                  {loc.url && (
-                    <a
-                      href={loc.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:underline"
-                    >
-                      🌐 {strings.map.website} ↗
-                    </a>
-                  )}
-                  <a
-                    href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${loc.coords.lat},${loc.coords.lng}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:underline"
-                  >
-                    📷 {strings.map.viewEntrance} ↗
-                  </a>
-                  <a
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${loc.coords.lat},${loc.coords.lng}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:underline"
-                  >
-                    🚗 {strings.map.navigateDrive} ↗
-                  </a>
-                  <a
-                    href={buildMapyCzUrl(loc.coords.lat, loc.coords.lng, loc.type)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-green-700 hover:underline"
-                  >
-                    🥾 {strings.map.navigateHike} ↗
-                  </a>
+                  <StopActions lat={loc.coords.lat} lng={loc.coords.lng} type={loc.type} url={loc.url} />
                 </div>
               </div>
-            </div>
+            </Card>
           );
         })}
 
@@ -401,7 +353,7 @@ export default function TodayPage() {
         {dayCustomStops.map((stop) => {
           const isEditing = editingCustomStop?.id === stop.id;
           return (
-            <div key={stop.id} className="p-4 bg-white rounded-xl border-2 border-dashed border-gray-200 shadow-sm">
+            <Card key={stop.id} interactive className="border-2 border-dashed border-gray-200 p-4">
               <div className="flex items-start gap-3">
                 <div
                   className="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0 ring-2 ring-yellow-400"
@@ -433,18 +385,15 @@ export default function TodayPage() {
                         placeholder={strings.map.note}
                       />
                       <div className="flex gap-2">
-                        <button
+                        <Button
+                          size="sm"
                           onClick={() => updateCustomStop(stop.id, editingCustomStop.name, editingCustomStop.note, editingCustomStop.type)}
-                          className="px-3 py-1.5 bg-primary text-white rounded-lg text-sm font-medium"
                         >
                           {strings.today.save}
-                        </button>
-                        <button
-                          onClick={() => setEditingCustomStop(null)}
-                          className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium"
-                        >
+                        </Button>
+                        <Button size="sm" variant="secondary" onClick={() => setEditingCustomStop(null)}>
                           {strings.today.cancel}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ) : (
@@ -459,7 +408,7 @@ export default function TodayPage() {
                     </>
                   )}
                 </div>
-                <div className="flex flex-col gap-1 shrink-0">
+                <div className="flex flex-col gap-1.5 shrink-0 w-[130px]">
                   {editing && !isEditing && (
                     <>
                       <button
@@ -477,46 +426,19 @@ export default function TodayPage() {
                     </>
                   )}
                   {stop.coords.lat !== 0 && (
-                    <>
-                      <a
-                        href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${stop.coords.lat},${stop.coords.lng}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-blue-600 hover:underline"
-                      >
-                        📷 {strings.map.viewEntrance} ↗
-                      </a>
-                      <a
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${stop.coords.lat},${stop.coords.lng}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-blue-600 hover:underline"
-                      >
-                        🚗 {strings.map.navigateDrive} ↗
-                      </a>
-                      <a
-                        href={buildMapyCzUrl(stop.coords.lat, stop.coords.lng, stop.type)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-green-700 hover:underline"
-                      >
-                        🥾 {strings.map.navigateHike} ↗
-                      </a>
-                    </>
+                    <StopActions lat={stop.coords.lat} lng={stop.coords.lng} type={stop.type} />
                   )}
                 </div>
               </div>
-            </div>
+            </Card>
           );
         })}
 
         {/* Custom day notes */}
         {dayCustomNotes.map((note) => (
-          <div
+          <Card
             key={note.id}
-            className={`flex items-start gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm ${
-              note.done ? 'opacity-50' : ''
-            }`}
+            className={`flex items-start gap-4 p-4 ${note.done ? 'opacity-50' : ''}`}
           >
             <button
               onClick={() => toggleNote(note.id, !note.done)}
@@ -545,13 +467,14 @@ export default function TodayPage() {
                 {strings.today.deleteItem}
               </button>
             )}
-          </div>
+          </Card>
         ))}
-      </div>
+      </StaggerList>
+      )}
 
       {/* Add Note */}
       {editing && (
-        <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
+        <Reveal duration={250} className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
           <h3 className="font-semibold text-primary mb-3">{strings.today.addItem}</h3>
           <div className="flex gap-3 flex-wrap sm:flex-nowrap">
             <input
@@ -566,14 +489,9 @@ export default function TodayPage() {
               onChange={(e) => setNewText(e.target.value)}
               className="flex-1 min-w-[150px] px-3 py-2 border rounded-lg text-sm"
             />
-            <button
-              onClick={addNote}
-              className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold"
-            >
-              {strings.today.save}
-            </button>
+            <Button onClick={addNote}>{strings.today.save}</Button>
           </div>
-        </div>
+        </Reveal>
       )}
     </div>
   );

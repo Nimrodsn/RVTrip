@@ -1,10 +1,20 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { motion } from 'motion/react';
 import { supabase } from '@/lib/supabase';
+import { useMotionEnabled } from '@/lib/useMotionEnabled';
 import { strings } from '@/lib/strings';
 import { days } from '@/lib/itinerary';
 import type { PhotoEntry } from '@/lib/types';
+import PageHeader from '@/components/PageHeader';
+import EmptyState from '@/components/EmptyState';
+import Reveal from '@/components/ui/Reveal';
+import StaggerList from '@/components/ui/StaggerList';
+import Card, { CARD_SURFACE } from '@/components/ui/Card';
+import GlareCard from '@/components/ui/GlareCard';
+import Button from '@/components/ui/Button';
+import { cn } from '@/lib/utils';
 
 export default function JournalPage() {
   const [photos, setPhotos] = useState<PhotoEntry[]>([]);
@@ -14,6 +24,7 @@ export default function JournalPage() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const motionEnabled = useMotionEnabled();
 
   useEffect(() => {
     loadPhotos();
@@ -67,20 +78,21 @@ export default function JournalPage() {
   }
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-extrabold text-primary">{strings.journal.title}</h1>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-gray-800 transition-colors"
-        >
-          {showForm ? strings.today.cancel : strings.journal.pickPhoto}
-        </button>
+    <div className="p-4 sm:p-8 max-w-5xl mx-auto">
+      <div className="mb-6">
+        <PageHeader
+          title={strings.journal.title}
+          action={
+            <Button onClick={() => setShowForm(!showForm)}>
+              {showForm ? strings.today.cancel : strings.journal.pickPhoto}
+            </Button>
+          }
+        />
       </div>
 
       {/* Upload Form */}
       {showForm && (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
+        <Reveal duration={250} className={cn(CARD_SURFACE, 'p-6 mb-6')}>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div className="md:col-span-2">
               <label className="block text-xs font-semibold text-gray-500 mb-1">בחר תמונה</label>
@@ -123,53 +135,61 @@ export default function JournalPage() {
               placeholder={strings.journal.addNote}
             />
           </div>
-          <button
-            onClick={uploadPhoto}
-            disabled={!file || uploading}
-            className="px-6 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-gray-800 transition-colors disabled:opacity-50"
-          >
+          <Button onClick={uploadPhoto} disabled={!file || uploading} className="px-6">
             {uploading ? 'מעלה...' : strings.journal.save}
-          </button>
-        </div>
+          </Button>
+        </Reveal>
       )}
 
       {/* Photo Grid */}
       {photos.length === 0 ? (
-        <p className="text-center text-gray-400 py-12">{strings.journal.noPhotos}</p>
+        <Card>
+          <EmptyState
+            emoji="📸"
+            title={strings.journal.noPhotos}
+            description={strings.journal.emptyHint}
+            action={<Button onClick={() => setShowForm(true)}>{strings.journal.pickPhoto}</Button>}
+          />
+        </Card>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <StaggerList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {photos.map((photo) => (
-            <div
+            <GlareCard
               key={photo.id}
-              className="group relative rounded-xl overflow-hidden bg-gray-100 aspect-square cursor-pointer"
-              onClick={() => setLightbox(photo)}
+              className="group relative aspect-square cursor-pointer overflow-hidden rounded-xl bg-gray-100 transition-transform hover:-translate-y-0.5"
             >
-              <img
-                src={getPublicUrl(photo.storage_path)}
-                alt={photo.location_name}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-                <p className="text-white text-xs font-semibold truncate">{photo.location_name}</p>
-                <p className="text-white/60 text-xs">יום {photo.day}</p>
+              <div className="h-full w-full" onClick={() => setLightbox(photo)}>
+                <img
+                  src={getPublicUrl(photo.storage_path)}
+                  alt={photo.location_name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                  <p className="text-white text-xs font-semibold truncate">{photo.location_name}</p>
+                  <p className="text-white/60 text-xs">יום {photo.day}</p>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deletePhoto(photo);
+                  }}
+                  className="absolute top-2 left-2 z-10 bg-red-500 text-white text-xs px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  {strings.journal.delete}
+                </button>
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deletePhoto(photo);
-                }}
-                className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                {strings.journal.delete}
-              </button>
-            </div>
+            </GlareCard>
           ))}
-        </div>
+        </StaggerList>
       )}
 
       {/* Lightbox */}
       {lightbox && (
-        <div
+        <motion.div
+          data-motion=""
+          initial={motionEnabled ? { opacity: 0 } : false}
+          animate={{ opacity: 1 }}
+          transition={{ duration: motionEnabled ? 0.18 : 0 }}
           className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-8"
           onClick={() => setLightbox(null)}
         >
@@ -191,7 +211,7 @@ export default function JournalPage() {
               ×
             </button>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );

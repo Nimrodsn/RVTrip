@@ -6,6 +6,11 @@ import { days, getDateForDay } from '@/lib/itinerary';
 import { strings } from '@/lib/strings';
 import { TYPE_COLORS, TYPE_EMOJI, type LocationType, type RvLocation } from '@/lib/types';
 import MapView from '@/components/MapView';
+import AnimatedTitle from '@/components/ui/AnimatedTitle';
+import Button from '@/components/ui/Button';
+import Reveal from '@/components/ui/Reveal';
+import StaggerList from '@/components/ui/StaggerList';
+import { cn } from '@/lib/utils';
 
 const TYPE_OPTIONS: { key: LocationType; label: string }[] = [
   { key: 'campsite', label: strings.map.campsite },
@@ -181,20 +186,16 @@ export default function MapPage() {
     <div className="h-screen flex flex-col">
       {/* Top bar with edit toggle */}
       <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-100">
-        <h2 className="font-bold text-primary text-lg">{strings.map.itinerary}</h2>
-        <button
+        <AnimatedTitle as="h2" text={strings.map.itinerary} className="font-bold text-primary text-lg" />
+        <Button
+          variant={editMode ? 'primary' : 'secondary'}
           onClick={() => {
             setEditMode(!editMode);
             if (editMode) setClickedCoords(null);
           }}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-            editMode
-              ? 'bg-primary text-white'
-              : 'bg-gray-100 text-primary hover:bg-gray-200'
-          }`}
         >
           {editMode ? strings.today.donEditing : strings.today.editPlan}
-        </button>
+        </Button>
       </div>
 
       {/* RV identity selector + share toggle */}
@@ -204,13 +205,15 @@ export default function MapPage() {
           <button
             key={id}
             onClick={() => selectRv(id)}
-            className={`px-3 py-1 text-xs rounded-full font-semibold transition-colors ${
+            aria-pressed={rvIdentity === id}
+            className={cn(
+              'inline-flex min-h-9 items-center rounded-full px-3.5 text-xs font-semibold transition-colors',
               rvIdentity === id
                 ? id === 'rv1'
                   ? 'bg-blue-600 text-white'
                   : 'bg-purple-600 text-white'
                 : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'
-            }`}
+            )}
           >
             {id === 'rv1' ? strings.liveLocation.rv1 : strings.liveLocation.rv2}
           </button>
@@ -219,11 +222,12 @@ export default function MapPage() {
         {rvIdentity && (
           <button
             onClick={toggleSharing}
-            className={`flex items-center gap-2 px-3 py-1 text-xs rounded-full font-semibold transition-colors ${
+            className={cn(
+              'inline-flex min-h-9 items-center gap-2 rounded-full px-3.5 text-xs font-semibold transition-colors',
               sharing
                 ? 'bg-red-100 text-red-700 border border-red-200'
                 : 'bg-green-100 text-green-700 border border-green-200'
-            }`}
+            )}
           >
             <span
               className={`w-2 h-2 rounded-full ${sharing ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}
@@ -237,30 +241,33 @@ export default function MapPage() {
         )}
 
         {/* Show live status badges for both RVs */}
-        {rvLocations.map((rv) => {
-          const mins = Math.round((Date.now() - new Date(rv.updated_at).getTime()) / 60000);
-          const fresh = mins < 5;
-          return (
-            <span
-              key={rv.rv_id}
-              className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                rv.rv_id === 'rv1'
-                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                  : 'bg-purple-50 text-purple-700 border border-purple-200'
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${fresh ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-              {rv.rv_id === 'rv1' ? strings.liveLocation.rv1 : strings.liveLocation.rv2}
-              {' '}
-              ({mins < 1 ? '<1' : mins} {strings.map.minutes})
-            </span>
-          );
-        })}
+        <StaggerList className="flex flex-wrap items-center gap-2">
+          {rvLocations.map((rv) => {
+            const mins = Math.round((Date.now() - new Date(rv.updated_at).getTime()) / 60000);
+            const fresh = mins < 5;
+            return (
+              <span
+                key={rv.rv_id}
+                className={cn(
+                  'flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium',
+                  rv.rv_id === 'rv1'
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                    : 'bg-purple-50 text-purple-700 border border-purple-200'
+                )}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${fresh ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+                {rv.rv_id === 'rv1' ? strings.liveLocation.rv1 : strings.liveLocation.rv2}
+                {' '}
+                ({mins < 1 ? '<1' : mins} {strings.map.minutes})
+              </span>
+            );
+          })}
+        </StaggerList>
       </div>
 
       {/* Add stop form (slides in when coordinates are clicked) */}
       {editMode && clickedCoords && (
-        <div className="bg-green-50 border-b border-green-200 p-4 animate-in slide-in-from-top">
+        <Reveal duration={250} className="bg-green-50 border-b border-green-200 p-4">
           <div className="max-w-3xl mx-auto">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-green-800">
@@ -308,22 +315,19 @@ export default function MapPage() {
               />
             </div>
             <div className="flex gap-2">
-              <button
+              <Button
                 onClick={saveStop}
                 disabled={!newStop.name.trim() || saving}
-                className="px-4 py-2 bg-green-700 text-white rounded-lg text-sm font-semibold hover:bg-green-800 transition-colors disabled:opacity-50"
+                className="bg-green-700 text-white hover:bg-green-800"
               >
                 {saving ? '...' : strings.today.save}
-              </button>
-              <button
-                onClick={cancelAdd}
-                className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors"
-              >
+              </Button>
+              <Button variant="secondary" onClick={cancelAdd} className="text-gray-600">
                 {strings.today.cancel}
-              </button>
+              </Button>
             </div>
           </div>
-        </div>
+        </Reveal>
       )}
 
       {/* Map */}

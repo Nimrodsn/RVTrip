@@ -8,6 +8,15 @@ export const metadata: Metadata = {
   title: 'מפקד השיירה - RVTrip Dashboard',
   description: 'Dashboard for the Czechia-Slovakia RV Convoy 2026',
   manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/favicon.png', sizes: '48x48', type: 'image/png' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -26,15 +35,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="he" dir="rtl">
-      <head>
-        <link rel="apple-touch-icon" href="/icon-192.svg" />
-      </head>
       <body className="min-h-screen bg-gray-50">
         <DrivingModeProvider>
           <OfflineBanner />
           <div className="flex min-h-screen">
             <Sidebar />
-            <main className="flex-1 overflow-auto pt-14 lg:pt-0">
+            <main id="app-scroll" className="flex-1 overflow-auto pt-14 lg:pt-0">
               {children}
             </main>
           </div>

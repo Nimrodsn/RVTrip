@@ -1,10 +1,22 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { motion } from 'motion/react';
 import { supabase } from '@/lib/supabase';
 import { strings } from '@/lib/strings';
 import { days } from '@/lib/itinerary';
+import { useMotionEnabled } from '@/lib/useMotionEnabled';
+import { cn } from '@/lib/utils';
 import type { Expense } from '@/lib/types';
+import PageHeader from '@/components/PageHeader';
+import EmptyState from '@/components/EmptyState';
+import StatCard from '@/components/StatCard';
+import Reveal from '@/components/ui/Reveal';
+import StaggerList from '@/components/ui/StaggerList';
+import Card, { CARD_SURFACE } from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import AccordionSection from '@/components/ui/AccordionSection';
+import AnimatedNumber from '@/components/ui/AnimatedNumber';
 
 type Category = Expense['category'];
 type Currency = Expense['currency'];
@@ -55,7 +67,8 @@ export default function BudgetPage() {
   const [convAmount, setConvAmount] = useState('100');
   const [convFrom, setConvFrom] = useState<ConvCurrency>('CZK');
   const [convTo, setConvTo] = useState<ConvCurrency>('EUR');
-  const [showConverter, setShowConverter] = useState(false);
+
+  const motionEnabled = useMotionEnabled();
 
   useEffect(() => {
     loadExpenses();
@@ -128,20 +141,21 @@ export default function BudgetPage() {
   const convRateDisplay = convNum > 0 ? (convResult / convNum).toFixed(4) : '—';
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-extrabold text-primary">{strings.budget.title}</h1>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-gray-800 transition-colors"
-        >
-          {showForm ? strings.today.cancel : strings.budget.addExpense}
-        </button>
+    <div className="p-4 sm:p-8 max-w-5xl mx-auto">
+      <div className="mb-6">
+        <PageHeader
+          title={strings.budget.title}
+          action={
+            <Button onClick={() => setShowForm(!showForm)}>
+              {showForm ? strings.today.cancel : strings.budget.addExpense}
+            </Button>
+          }
+        />
       </div>
 
       {/* Add Form */}
       {showForm && (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
+        <Reveal duration={250} className={cn(CARD_SURFACE, 'p-6 mb-6')}>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1">{strings.budget.amount}</label>
@@ -202,117 +216,95 @@ export default function BudgetPage() {
               />
             </div>
           </div>
-          <button
-            onClick={addExpense}
-            className="mt-4 px-6 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-gray-800 transition-colors"
-          >
+          <Button onClick={addExpense} className="mt-4 px-6">
             {strings.budget.addExpense}
-          </button>
-        </div>
+          </Button>
+        </Reveal>
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 text-center">
-          <div className="text-xs text-gray-400 mb-1">{strings.budget.total} (CZK)</div>
-          <div className="text-2xl font-bold text-primary">{totalCZK.toLocaleString()} Kč</div>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 text-center">
-          <div className="text-xs text-gray-400 mb-1">{strings.budget.total} (EUR)</div>
-          <div className="text-2xl font-bold text-primary">€{totalEUR.toLocaleString()}</div>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 text-center">
-          <div className="text-xs text-gray-400 mb-1">{strings.budget.total} (≈CZK)</div>
-          <div className="text-2xl font-bold text-primary">{Math.round(grandTotalCZK).toLocaleString()} Kč</div>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 text-center">
-          <div className="text-xs text-gray-400 mb-1">{strings.budget.total} (≈ILS)</div>
-          <div className="text-2xl font-bold text-primary">₪{Math.round(grandTotalILS).toLocaleString()}</div>
-        </div>
-      </div>
+      <StaggerList className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label={`${strings.budget.total} (CZK)`} value={totalCZK} suffix="Kč" />
+        <StatCard label={`${strings.budget.total} (EUR)`} value={totalEUR} prefix="€" />
+        <StatCard label={`${strings.budget.total} (≈CZK)`} value={Math.round(grandTotalCZK)} suffix="Kč" emphasis />
+        <StatCard label={`${strings.budget.total} (≈ILS)`} value={Math.round(grandTotalILS)} prefix="₪" emphasis />
+      </StaggerList>
 
       {/* Currency Converter */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm mb-6">
-        <button
-          onClick={() => setShowConverter(!showConverter)}
-          className="w-full flex items-center justify-between p-4 text-sm font-bold text-primary hover:bg-gray-50 transition-colors rounded-xl"
-        >
-          <span>💱 {strings.budget.converter}</span>
-          <span className="flex items-center gap-2">
-            {ratesLive ? (
-              <span className="flex items-center gap-1 text-xs font-medium text-green-600">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                {strings.budget.liveRate}
-              </span>
-            ) : (
-              <span className="text-xs font-medium text-gray-400">{strings.budget.rateUnavailable}</span>
-            )}
-            <span className={`transition-transform ${showConverter ? 'rotate-180' : ''}`}>▾</span>
-          </span>
-        </button>
-        {showConverter && (
-          <div className="px-4 pb-4 border-t border-gray-100 pt-4">
-            <div className="flex flex-wrap items-end gap-3">
-              <div className="flex-1 min-w-[120px]">
-                <label className="block text-xs font-semibold text-gray-500 mb-1">{strings.budget.amount}</label>
-                <input
-                  type="number"
-                  value={convAmount}
-                  onChange={(e) => setConvAmount(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg text-sm"
-                  placeholder="100"
-                />
-              </div>
-              <div className="min-w-[80px]">
-                <label className="block text-xs font-semibold text-gray-500 mb-1">{strings.budget.from}</label>
-                <select
-                  value={convFrom}
-                  onChange={(e) => setConvFrom(e.target.value as ConvCurrency)}
-                  className="w-full px-3 py-2 border rounded-lg text-sm"
-                >
-                  <option value="CZK">CZK</option>
-                  <option value="EUR">EUR</option>
-                  <option value="ILS">ILS</option>
-                </select>
-              </div>
-              <button
-                onClick={() => { setConvFrom(convTo); setConvTo(convFrom); }}
-                className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-bold hover:bg-gray-200 transition-colors"
-                title="Swap"
-              >
-                ⇄
-              </button>
-              <div className="min-w-[80px]">
-                <label className="block text-xs font-semibold text-gray-500 mb-1">{strings.budget.to}</label>
-                <select
-                  value={convTo}
-                  onChange={(e) => setConvTo(e.target.value as ConvCurrency)}
-                  className="w-full px-3 py-2 border rounded-lg text-sm"
-                >
-                  <option value="CZK">CZK</option>
-                  <option value="EUR">EUR</option>
-                  <option value="ILS">ILS</option>
-                </select>
-              </div>
-              <div className="flex-1 min-w-[140px] text-left">
-                <div className="text-xs text-gray-400 mb-1">=</div>
-                <div className="text-2xl font-bold text-primary">
-                  {convTo === 'CZK' && `${convResult.toFixed(2)} Kč`}
-                  {convTo === 'EUR' && `€${convResult.toFixed(2)}`}
-                  {convTo === 'ILS' && `₪${convResult.toFixed(2)}`}
-                </div>
-              </div>
-            </div>
-            <div className="mt-2 text-xs text-gray-400">
-              1 {convFrom} = {convRateDisplay} {convTo}
-              {ratesLive && <span className="mr-2"> · {strings.budget.liveRate} (Frankfurter API)</span>}
+      <AccordionSection
+        className="mb-6"
+        title={`💱 ${strings.budget.converter}`}
+        meta={
+          ratesLive ? (
+            <span className="flex items-center gap-1 text-xs font-medium text-green-600">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+              {strings.budget.liveRate}
+            </span>
+          ) : (
+            <span className="text-xs font-medium text-gray-400">{strings.budget.rateUnavailable}</span>
+          )
+        }
+      >
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex-1 min-w-[120px]">
+            <label className="block text-xs font-semibold text-gray-500 mb-1">{strings.budget.amount}</label>
+            <input
+              type="number"
+              value={convAmount}
+              onChange={(e) => setConvAmount(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg text-sm"
+              placeholder="100"
+            />
+          </div>
+          <div className="min-w-[80px]">
+            <label className="block text-xs font-semibold text-gray-500 mb-1">{strings.budget.from}</label>
+            <select
+              value={convFrom}
+              onChange={(e) => setConvFrom(e.target.value as ConvCurrency)}
+              className="w-full px-3 py-2 border rounded-lg text-sm"
+            >
+              <option value="CZK">CZK</option>
+              <option value="EUR">EUR</option>
+              <option value="ILS">ILS</option>
+            </select>
+          </div>
+          <Button
+            variant="secondary"
+            onClick={() => { setConvFrom(convTo); setConvTo(convFrom); }}
+            className="font-bold"
+            title="Swap"
+          >
+            ⇄
+          </Button>
+          <div className="min-w-[80px]">
+            <label className="block text-xs font-semibold text-gray-500 mb-1">{strings.budget.to}</label>
+            <select
+              value={convTo}
+              onChange={(e) => setConvTo(e.target.value as ConvCurrency)}
+              className="w-full px-3 py-2 border rounded-lg text-sm"
+            >
+              <option value="CZK">CZK</option>
+              <option value="EUR">EUR</option>
+              <option value="ILS">ILS</option>
+            </select>
+          </div>
+          <div className="flex-1 min-w-[140px] text-left">
+            <div className="text-xs text-gray-400 mb-1">=</div>
+            <div className="text-2xl font-bold text-primary">
+              {convTo === 'CZK' && `${convResult.toFixed(2)} Kč`}
+              {convTo === 'EUR' && `€${convResult.toFixed(2)}`}
+              {convTo === 'ILS' && `₪${convResult.toFixed(2)}`}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+        <div className="mt-2 text-xs text-gray-400">
+          1 {convFrom} = {convRateDisplay} {convTo}
+          {ratesLive && <span className="mr-2"> · {strings.budget.liveRate} (Frankfurter API)</span>}
+        </div>
+      </AccordionSection>
 
       {/* Category Breakdown */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
+      <Card className="p-6 mb-6">
         <h2 className="font-bold text-primary mb-4">פירוט לפי קטגוריה</h2>
         <div className="space-y-3">
           {categoryTotals.map((cat) => {
@@ -323,30 +315,80 @@ export default function BudgetPage() {
                   <span className="font-medium">
                     {cat.emoji} {cat.label}
                   </span>
-                  <span className="text-gray-500">
-                    {cat.czk > 0 && `${cat.czk} Kč`}
-                    {cat.czk > 0 && cat.eur > 0 && ' + '}
-                    {cat.eur > 0 && `€${cat.eur}`}
+                  <span className="flex items-baseline gap-2 text-gray-500">
+                    <span>
+                      {cat.czk > 0 && `${cat.czk} Kč`}
+                      {cat.czk > 0 && cat.eur > 0 && ' + '}
+                      {cat.eur > 0 && `€${cat.eur}`}
+                    </span>
+                    <span className="text-xs font-semibold text-gray-400">
+                      <AnimatedNumber value={pct} />%
+                    </span>
                   </span>
                 </div>
                 <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all"
-                    style={{ width: `${pct}%` }}
-                  />
+                  {motionEnabled ? (
+                    <motion.div
+                      data-motion=""
+                      className="h-full bg-primary rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ duration: 0.6, ease: 'easeOut' }}
+                    />
+                  ) : (
+                    <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
-      </div>
+      </Card>
 
       {/* Expense List */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
+      <Card>
         {expenses.length === 0 ? (
-          <p className="text-center text-gray-400 py-12">{strings.budget.noExpenses}</p>
+          <EmptyState
+            emoji="🧾"
+            title={strings.budget.noExpenses}
+            description={strings.budget.emptyHint}
+            action={<Button onClick={() => setShowForm(true)}>{strings.budget.addExpense}</Button>}
+          />
         ) : (
-          <table className="w-full text-sm">
+          <>
+          {/* Mobile: card rows */}
+          <StaggerList className="divide-y divide-gray-50 md:hidden">
+            {expenses.map((e) => (
+              <div key={e.id} className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-primary">
+                      {CATEGORIES.find((c) => c.key === e.category)?.emoji}{' '}
+                      {CATEGORY_LABELS[e.category]}
+                    </p>
+                    <p className="mt-0.5 text-xs text-gray-400">
+                      {strings.budget.day} {e.day}
+                    </p>
+                    {e.note && <p className="mt-1 text-sm text-gray-500">{e.note}</p>}
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <span className="text-base font-extrabold text-primary">
+                      {e.currency === 'CZK' ? `${e.amount} Kč` : `€${e.amount}`}
+                    </span>
+                    <button
+                      onClick={() => deleteExpense(e.id)}
+                      className="text-xs font-medium text-red-400 hover:text-red-600"
+                    >
+                      {strings.budget.delete}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </StaggerList>
+
+          {/* Desktop: table */}
+          <table className="hidden w-full text-sm md:table">
             <thead>
               <tr className="border-b border-gray-100 text-gray-400 text-xs">
                 <th className="py-3 px-4 text-right font-medium">{strings.budget.day}</th>
@@ -380,8 +422,9 @@ export default function BudgetPage() {
               ))}
             </tbody>
           </table>
+          </>
         )}
-      </div>
+      </Card>
     </div>
   );
 }
