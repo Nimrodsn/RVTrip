@@ -127,6 +127,28 @@ html.driving-mode aside nav a span {
   color: inherit !important;
 }
 
+/*
+ * The day guide header puts white text over a gradient, but driving mode forces text to black.
+ * Flatten the header to white so the day title stays readable at high contrast.
+ */
+html.driving-mode .day-guide-hero {
+  background-image: none;
+  background-color: #ffffff;
+  border-bottom: 2px solid #374151;
+}
+
+html.driving-mode .day-guide-scrim {
+  display: none;
+}
+
+html.driving-mode .day-guide-hero img {
+  opacity: 0.12;
+}
+
+html.driving-mode .day-guide-hero * {
+  filter: none !important;
+}
+
 /* Category filter pills */
 html.driving-mode .rounded-full {
   min-height: 40px;

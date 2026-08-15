@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { itinerary, days, getDateForDay } from '@/lib/itinerary';
+import { getDayGuide } from '@/lib/dayGuides';
 import { strings } from '@/lib/strings';
 import { TYPE_COLORS, TYPE_EMOJI, type DayNote, type CustomStop, type LocationType } from '@/lib/types';
 import PageHeader from '@/components/PageHeader';
+import DayGuide from '@/components/DayGuide';
 import EmptyState from '@/components/EmptyState';
 import StopActions from '@/components/StopActions';
 import FilterPills from '@/components/ui/FilterPills';
@@ -82,6 +84,7 @@ export default function TodayPage() {
   );
   const dayCustomStops = customStops.filter((s) => s.day === selectedDay);
   const dayCustomNotes = dayNotes.filter((n) => n.day === selectedDay);
+  const dayGuide = getDayGuide(selectedDay);
   const isDayEmpty = dayLocations.length === 0 && dayCustomStops.length === 0 && dayCustomNotes.length === 0;
 
   async function saveStopEdit(stopKey: string, name: string, note: string) {
@@ -176,6 +179,9 @@ export default function TodayPage() {
           ariaLabel={strings.today.selectDay}
         />
       </div>
+
+      {/* Day story: read what happens today before scanning the stops */}
+      {dayGuide && <DayGuide key={selectedDay} guide={dayGuide} className="mb-6" />}
 
       {/* Toolbar */}
       <div className="flex items-center gap-3 mb-6 flex-wrap">

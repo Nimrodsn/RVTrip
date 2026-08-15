@@ -27,6 +27,26 @@ export interface Itinerary {
   locations: ItineraryLocation[];
 }
 
+/** Visual mood of a day, used to pick the header gradient when there is no photo. */
+export type DayTheme = 'rock' | 'water' | 'cave' | 'forest' | 'city' | 'road';
+
+/**
+ * Hebrew narrative for one trip day. Written by hand rather than derived from `locations`,
+ * because where you sleep carries over between days and the last day has no overnight at all.
+ */
+export interface DayGuide {
+  day: number;
+  title: string;
+  icon: string;
+  theme: DayTheme;
+  drive?: string;
+  doing: string[];
+  /** Free text, since days 2 and 5 stay put and day 8 ends the trip. */
+  sleeping: string;
+  knowBefore: string[];
+  image?: { src: string; alt: string; credit?: string };
+}
+
 export interface Expense {
   id: string;
   amount: number;

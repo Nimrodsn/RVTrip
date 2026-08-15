@@ -129,6 +129,10 @@ export const strings = {
     restoreStops: 'שחזר תחנות',
     hiddenCount: 'תחנות מוסתרות',
     emptyDayHint: 'אין תחנות מתוכננות ליום זה. אפשר להוסיף תחנה או פריט משלכם.',
+    whatToDo: 'מה עושים',
+    whereToSleep: 'איפה ישנים',
+    goodToKnow: 'מה כדאי לדעת',
+    driveToday: 'נסיעה היום',
   },
   weather: {
     title: 'מזג אוויר',
