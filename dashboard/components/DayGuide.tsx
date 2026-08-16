@@ -2,11 +2,24 @@
 
 import { useState } from 'react';
 import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
 import Reveal from '@/components/ui/Reveal';
 import AccordionSection from '@/components/ui/AccordionSection';
 import { strings } from '@/lib/strings';
 import type { DayGuide as DayGuideData, DayTheme } from '@/lib/types';
 import { cn } from '@/lib/utils';
+
+export const GUIDE_SECTION_IDS = ['doing', 'sleeping', 'knowBefore'] as const;
+
+export type GuideSection = (typeof GUIDE_SECTION_IDS)[number];
+export type GuideSectionState = Record<GuideSection, boolean>;
+
+/** Matches how the guide first shipped: the day is readable at a glance, the tips are opt-in. */
+export const DEFAULT_GUIDE_SECTIONS: GuideSectionState = {
+  doing: true,
+  sleeping: true,
+  knowBefore: false,
+};
 
 /** Written as literal class strings so Tailwind keeps gradients that are only picked at runtime. */
 const THEME_GRADIENT: Record<DayTheme, string> = {
@@ -20,13 +33,25 @@ const THEME_GRADIENT: Record<DayTheme, string> = {
 
 interface DayGuideProps {
   guide: DayGuideData;
+  /** Owned by the page so the choice survives switching days, which remounts this component. */
+  openSections: GuideSectionState;
+  onToggleSection: (section: GuideSection) => void;
+  onSetAllSections: (open: boolean) => void;
   className?: string;
 }
 
 /** The story of one trip day: what you do, where you sleep, and what to know beforehand. */
-export default function DayGuide({ guide, className }: DayGuideProps) {
+export default function DayGuide({
+  guide,
+  openSections,
+  onToggleSection,
+  onSetAllSections,
+  className,
+}: DayGuideProps) {
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = Boolean(guide.image) && !imageFailed;
+  const allOpen = GUIDE_SECTION_IDS.every((id) => openSections[id]);
+  const allClosed = GUIDE_SECTION_IDS.every((id) => !openSections[id]);
 
   return (
     <Reveal duration={400} className={className}>
@@ -58,50 +83,70 @@ export default function DayGuide({ guide, className }: DayGuideProps) {
           </div>
         </div>
 
-        <div className="space-y-4 p-4">
+        <div className="flex flex-wrap items-center gap-3 p-4">
           {guide.drive && (
             <p className="inline-flex items-center gap-1.5 rounded-lg bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-600">
               🛣️ {strings.today.driveToday}: {guide.drive}
             </p>
           )}
-
-          <section>
-            <h3 className="mb-2 text-sm font-bold text-primary">🎯 {strings.today.whatToDo}</h3>
-            <ul className="space-y-2">
-              {guide.doing.map((item) => (
-                <li key={item} className="flex gap-2 text-sm leading-relaxed text-gray-700">
-                  <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-gray-300" aria-hidden />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="rounded-lg border border-gray-100 bg-gray-50 p-3">
-            <h3 className="mb-1 text-sm font-bold text-primary">🛏️ {strings.today.whereToSleep}</h3>
-            <p className="text-sm leading-relaxed text-gray-700">{guide.sleeping}</p>
-          </section>
-
-          {guide.image?.credit && (
-            <p className="text-[11px] text-gray-400">{guide.image.credit}</p>
-          )}
+          {/* ms-auto keeps the buttons at the inline end whether or not the drive badge is there. */}
+          <div className="flex gap-2 ms-auto">
+            <Button size="sm" variant="secondary" onClick={() => onSetAllSections(true)} disabled={allOpen}>
+              {strings.today.expandAll}
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => onSetAllSections(false)} disabled={allClosed}>
+              {strings.today.collapseAll}
+            </Button>
+          </div>
         </div>
       </Card>
 
-      <AccordionSection
-        title={`💡 ${strings.today.goodToKnow}`}
-        meta={<span className="text-xs font-medium text-gray-400">{guide.knowBefore.length}</span>}
-        className="mt-3"
-      >
-        <ul className="space-y-2">
-          {guide.knowBefore.map((item) => (
-            <li key={item} className="flex gap-2 text-sm leading-relaxed text-gray-700">
-              <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-amber-300" aria-hidden />
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul>
-      </AccordionSection>
+      {/* Siblings rather than nested, because AccordionSection carries its own card surface. */}
+      <div className="mt-3 space-y-3">
+        <AccordionSection
+          title={`🎯 ${strings.today.whatToDo}`}
+          meta={<span className="text-xs font-medium text-gray-400">{guide.doing.length}</span>}
+          open={openSections.doing}
+          onOpenChange={() => onToggleSection('doing')}
+        >
+          <ul className="space-y-2">
+            {guide.doing.map((item) => (
+              <li key={item} className="flex gap-2 text-sm leading-relaxed text-gray-700">
+                <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-gray-300" aria-hidden />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </AccordionSection>
+
+        <AccordionSection
+          title={`🛏️ ${strings.today.whereToSleep}`}
+          open={openSections.sleeping}
+          onOpenChange={() => onToggleSection('sleeping')}
+        >
+          <p className="text-sm leading-relaxed text-gray-700">{guide.sleeping}</p>
+        </AccordionSection>
+
+        <AccordionSection
+          title={`💡 ${strings.today.goodToKnow}`}
+          meta={<span className="text-xs font-medium text-gray-400">{guide.knowBefore.length}</span>}
+          open={openSections.knowBefore}
+          onOpenChange={() => onToggleSection('knowBefore')}
+        >
+          <ul className="space-y-2">
+            {guide.knowBefore.map((item) => (
+              <li key={item} className="flex gap-2 text-sm leading-relaxed text-gray-700">
+                <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-amber-300" aria-hidden />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </AccordionSection>
+      </div>
+
+      {guide.image?.credit && (
+        <p className="mt-2 text-[11px] text-gray-400">{guide.image.credit}</p>
+      )}
     </Reveal>
   );
 }

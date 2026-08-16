@@ -133,6 +133,8 @@ export const strings = {
     whereToSleep: 'איפה ישנים',
     goodToKnow: 'מה כדאי לדעת',
     driveToday: 'נסיעה היום',
+    expandAll: 'פתח הכל',
+    collapseAll: 'סגור הכל',
   },
   weather: {
     title: 'מזג אוויר',

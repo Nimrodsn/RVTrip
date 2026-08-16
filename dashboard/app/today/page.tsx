@@ -7,7 +7,12 @@ import { getDayGuide } from '@/lib/dayGuides';
 import { strings } from '@/lib/strings';
 import { TYPE_COLORS, TYPE_EMOJI, type DayNote, type CustomStop, type LocationType } from '@/lib/types';
 import PageHeader from '@/components/PageHeader';
-import DayGuide from '@/components/DayGuide';
+import DayGuide, {
+  GUIDE_SECTION_IDS,
+  DEFAULT_GUIDE_SECTIONS,
+  type GuideSection,
+  type GuideSectionState,
+} from '@/components/DayGuide';
 import EmptyState from '@/components/EmptyState';
 import StopActions from '@/components/StopActions';
 import FilterPills from '@/components/ui/FilterPills';
@@ -15,6 +20,9 @@ import StaggerList from '@/components/ui/StaggerList';
 import Reveal from '@/components/ui/Reveal';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+
+/** One preference for the whole trip, so collapsing a section keeps it collapsed on other days. */
+const GUIDE_SECTIONS_KEY = 'today-guide-sections';
 
 const TYPE_OPTIONS: { key: LocationType; label: string }[] = [
   { key: 'campsite', label: strings.map.campsite },
@@ -35,10 +43,34 @@ export default function TodayPage() {
   const [editingCustomStop, setEditingCustomStop] = useState<{ id: string; name: string; note: string; type: LocationType } | null>(null);
   const [showAddStop, setShowAddStop] = useState(false);
   const [newStop, setNewStop] = useState({ name: '', type: 'attraction' as LocationType, note: '', lat: '', lng: '' });
+  const [openSections, setOpenSections] = useState<GuideSectionState>(DEFAULT_GUIDE_SECTIONS);
 
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(GUIDE_SECTIONS_KEY);
+    if (!stored) return;
+    try {
+      setOpenSections({ ...DEFAULT_GUIDE_SECTIONS, ...(JSON.parse(stored) as Partial<GuideSectionState>) });
+    } catch {
+      // A corrupted preference should not break the page; the defaults already stand.
+    }
+  }, []);
+
+  function persistSections(next: GuideSectionState) {
+    setOpenSections(next);
+    localStorage.setItem(GUIDE_SECTIONS_KEY, JSON.stringify(next));
+  }
+
+  function toggleGuideSection(section: GuideSection) {
+    persistSections({ ...openSections, [section]: !openSections[section] });
+  }
+
+  function setAllGuideSections(open: boolean) {
+    persistSections(Object.fromEntries(GUIDE_SECTION_IDS.map((id) => [id, open])) as GuideSectionState);
+  }
 
   async function loadData() {
     const [notesRes, hiddenRes, editsRes, stopsRes] = await Promise.all([
@@ -181,7 +213,16 @@ export default function TodayPage() {
       </div>
 
       {/* Day story: read what happens today before scanning the stops */}
-      {dayGuide && <DayGuide key={selectedDay} guide={dayGuide} className="mb-6" />}
+      {dayGuide && (
+        <DayGuide
+          key={selectedDay}
+          guide={dayGuide}
+          openSections={openSections}
+          onToggleSection={toggleGuideSection}
+          onSetAllSections={setAllGuideSections}
+          className="mb-6"
+        />
+      )}
 
       {/* Toolbar */}
       <div className="flex items-center gap-3 mb-6 flex-wrap">
