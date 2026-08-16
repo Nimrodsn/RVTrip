@@ -15,6 +15,11 @@ export const DAY_GUIDES: DayGuide[] = [
     title: 'קבלת הקרוואן וקנייה גדולה בפראג',
     icon: '🚐',
     theme: 'road',
+    image: {
+      src: '/images/days/day1-bohemian-paradise.jpg',
+      alt: 'נוף על גן העדן הבוהמי',
+      credit: 'Ted Moravec / Wikimedia Commons (CC0)',
+    },
     drive: 'כ-100 ק"מ, כשעה וחצי',
     doing: [
       'קבלת הקרוואן בפראג: סיור מסירה מסודר — מים נקיים, מים אפורים, שירותים כימיים, גז, חשמל וגובה הרכב. לצלם את הקרוואן מכל הכיוונים לפני היציאה.',
@@ -35,6 +40,11 @@ export const DAY_GUIDES: DayGuide[] = [
     title: 'עיר הסלעים הרובוסקאלסקו',
     icon: '🧗',
     theme: 'rock',
+    image: {
+      src: '/images/days/day2-hruboskalsko.jpg',
+      alt: 'עיר הסלעים הרובוסקאלסקו — מגדלי חול ויער אבן',
+      credit: 'ŠJů / Wikimedia Commons (CC BY-SA 3.0)',
+    },
     drive: 'כ-20 ק"מ בלבד, נסיעות קצרות סביב הקמפינג',
     doing: [
       'טיול בעיר הסלעים Hruboskalsko: מגדלי חול שנראים כמו יער אבן, נקודות תצפית וטירת Valdštejn בדרך.',
@@ -55,6 +65,11 @@ export const DAY_GUIDES: DayGuide[] = [
     title: 'סלעי אדרשפאך והמעבר האחרון בצ\'כיה',
     icon: '🪨',
     theme: 'rock',
+    image: {
+      src: '/images/days/day3-adrspach.jpg',
+      alt: 'מבוך הסלעים בסלעי אדרשפאך',
+      credit: 'Tom Ja / Wikimedia Commons (CC BY-SA 4.0)',
+    },
     drive: 'כ-90 ק"מ, כשעה וחצי',
     doing: [
       'יציאה מוקדמת מהקמפינג — להיות בסלעי Adršpach-Teplice לפני 08:30, כי החניה מתמלאת.',
@@ -76,6 +91,11 @@ export const DAY_GUIDES: DayGuide[] = [
     title: 'יום נסיעה לליפטוב ואקוופארק טטרהלנדיה',
     icon: '🌊',
     theme: 'water',
+    image: {
+      src: '/images/days/day4-tatralandia.jpg',
+      alt: 'אקוופארק טטרהלנדיה בליפטוב, סלובקיה',
+      credit: 'Pavel Ševela / Wikimedia Commons (CC BY-SA 3.0)',
+    },
     drive: 'כ-400 ק"מ, 5-6 שעות נטו',
     doing: [
       'הנסיעה הארוכה של הטיול: מצ\'כיה דרך פולין או מורביה אל אזור ליפטוב שבסלובקיה, עם עצירות קפה ורגליים.',
@@ -97,6 +117,11 @@ export const DAY_GUIDES: DayGuide[] = [
     title: 'מערת הקרח ורפטינג משפחתי',
     icon: '🧊',
     theme: 'cave',
+    image: {
+      src: '/images/days/day5-ice-cave.jpg',
+      alt: 'קרח ונטיפים במערת הקרח Demänovská',
+      credit: 'Jojo / Wikimedia Commons (CC BY-SA 3.0)',
+    },
     drive: 'כ-30 ק"מ, נסיעות קצרות באזור',
     doing: [
       'מערת הקרח Demänovská: מערכת מערות עם קרח קבוע לאורך השנה, בסיור מודרך בין אולמות ומסדרונות.',
@@ -118,6 +143,11 @@ export const DAY_GUIDES: DayGuide[] = [
     title: 'שביל צמרות העצים ומעבר לגן העדן הסלובקי',
     icon: '🌲',
     theme: 'forest',
+    image: {
+      src: '/images/days/day6-bachledka.jpg',
+      alt: 'שביל צמרות העצים ב-Bachledka מעל היער',
+      credit: 'young shanahan / Wikimedia Commons (CC BY 2.0)',
+    },
     drive: 'כ-150 ק"מ, כשעתיים וחצי',
     doing: [
       'שביל צמרות העצים ב-Bachledka: גשר עץ שמטפס אל מעל היער, עם מגדל תצפית ומגלשה ספירלית בירידה.',
@@ -139,6 +169,11 @@ export const DAY_GUIDES: DayGuide[] = [
     title: 'חזרה למורביה ולילה על שפת האגם',
     icon: '🏞️',
     theme: 'road',
+    image: {
+      src: '/images/days/day7-jedovnice.jpg',
+      alt: 'אגם Olšovec ליד ידובניצה — לילה אחרון על שפת המים',
+      credit: 'Petr1888 / Wikimedia Commons (CC BY-SA 4.0)',
+    },
     drive: 'כ-370 ק"מ, כ-5 שעות נטו',
     doing: [
       'נסיעת חזרה מסלובקיה אל הקארסט המורבי שבצ\'כיה — הקטע הארוך האחרון של הטיול.',
@@ -160,6 +195,11 @@ export const DAY_GUIDES: DayGuide[] = [
     title: 'מערות פונקבה, תהום מקוצ\'ה והחזרת הקרוואן',
     icon: '🕳️',
     theme: 'cave',
+    image: {
+      src: '/images/days/day8-macocha.jpg',
+      alt: 'תהום מקוצ\'ה (Macocha) בקרסט המורבי',
+      credit: 'Pericluss / Wikimedia Commons (CC0)',
+    },
     drive: 'כ-20 ק"מ למערות, ואחר כך נסיעת ההחזרה',
     doing: [
       'סיור מוקדם במערות Punkevní: הליכה בין נטיפים, מבט מלמטה אל תהום Macocha ושייט בסירה על נהר הפונקבה התת-קרקעי.',
