@@ -1,0 +1,79 @@
+[
+    {
+        "day":  1,
+        "file":  "day1-bohemian-paradise",
+        "title":  "File:Bohemian Paradise view with Bezděz castle in the background.jpg",
+        "url":  "https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Bohemian_Paradise_view_with_Bezd%C4%9Bz_castle_in_the_background.jpg/1280px-Bohemian_Paradise_view_with_Bezd%C4%9Bz_castle_in_the_background.jpg",
+        "artist":  "Ted Moravec",
+        "license":  "CC0",
+        "dest":  "public/images/days/day1-bohemian-paradise.jpg",
+        "size":  185733,
+        "magic":  "JPEG"
+    },
+    {
+        "day":  2,
+        "file":  "day2-hruboskalsko",
+        "title":  "File:Rozhled z vyhlídky U Lvíčka (13).jpg",
+        "url":  "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Rozhled_z_vyhl%C3%ADdky_U_Lv%C3%AD%C4%8Dka_%2813%29.jpg/1280px-Rozhled_z_vyhl%C3%ADdky_U_Lv%C3%AD%C4%8Dka_%2813%29.jpg",
+        "artist":  "User:ŠJů",
+        "license":  "CC BY-SA 3.0",
+        "dest":  "public/images/days/day2-hruboskalsko.jpg",
+        "size":  541897,
+        "magic":  "JPEG"
+    },
+    {
+        "day":  3,
+        "file":  "day3-adrspach",
+        "title":  "File:Adršpašskoteplické skály 02.JPG",
+        "url":  "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Adr%C5%A1pa%C5%A1skoteplick%C3%A9_sk%C3%A1ly_02.JPG/1280px-Adr%C5%A1pa%C5%A1skoteplick%C3%A9_sk%C3%A1ly_02.JPG",
+        "artist":  "Lestat (Jan Mehlich)",
+        "license":  "CC BY-SA 3.0",
+        "dest":  "public/images/days/day3-adrspach.jpg",
+        "size":  1964,
+        "magic":  "INVALID"
+    },
+    {
+        "day":  4,
+        "file":  "day4-tatralandia",
+        "title":  "File:Aquapark Tatralandia (13).jpg",
+        "url":  "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Aquapark_Tatralandia_%2813%29.jpg/1280px-Aquapark_Tatralandia_%2813%29.jpg",
+        "artist":  "I would appreciate being notified if you use my work outside Wikimedia.\nDo not copy this image illegally by ignoring the terms of the license below, as it is not in the public domain. If you would like special permission to use, license, or purchase the image please contact me to negotiate terms.\n\nMore of my work can be found in my personal gallery.",
+        "license":  "CC BY-SA 3.0",
+        "dest":  "public/images/days/day4-tatralandia.jpg",
+        "size":  1964,
+        "magic":  "INVALID"
+    },
+    {
+        "day":  5,
+        "file":  "day5-ice-cave",
+        "title":  "File:Demanova Ice Cave 23.jpg",
+        "url":  "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Demanova_Ice_Cave_23.jpg/1280px-Demanova_Ice_Cave_23.jpg",
+        "artist":  "Jojo, en:Jojo_1, pl:Jojo",
+        "license":  "CC BY-SA 3.0",
+        "dest":  "public/images/days/day5-ice-cave.jpg",
+        "size":  233993,
+        "magic":  "JPEG"
+    },
+    {
+        "day":  6,
+        "file":  "day6-bachledka",
+        "title":  "File:Chodník Korunami Stromov (Treetop walk) (50359326307).jpg",
+        "url":  "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Chodn%C3%ADk_Korunami_Stromov_%28Treetop_walk%29_%2850359326307%29.jpg/1280px-Chodn%C3%ADk_Korunami_Stromov_%28Treetop_walk%29_%2850359326307%29.jpg",
+        "artist":  "young shanahan from Bratislava, Slovakia",
+        "license":  "CC BY 2.0",
+        "dest":  "public/images/days/day6-bachledka.jpg",
+        "size":  460117,
+        "magic":  "JPEG"
+    },
+    {
+        "day":  8,
+        "file":  "day8-macocha",
+        "title":  "File:Macocha Abyss at Punkva Caves, Czechia.jpg",
+        "url":  "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Macocha_Abyss_at_Punkva_Caves%2C_Czechia.jpg/1280px-Macocha_Abyss_at_Punkva_Caves%2C_Czechia.jpg",
+        "artist":  "7oanna",
+        "license":  "CC BY-SA 4.0",
+        "dest":  "public/images/days/day8-macocha.jpg",
+        "size":  1964,
+        "magic":  "INVALID"
+    }
+]
