@@ -1,4 +1,4 @@
-# Pass -Only to refetch a subset, e.g. -Only olomouc,mumlava-falls
+# Pass -Only to refetch a subset, e.g. -Only ice-cave,mumlava-falls
 param([string[]]$Only)
 
 $ErrorActionPreference = 'Stop'
@@ -8,9 +8,9 @@ $days = @(
   @{ id = 1; search = 'Bohemian Paradise'; file = 'bohemian-paradise' },
   @{ id = 2; search = 'Mumlava waterfall Harrachov'; file = 'mumlava-falls' },
   @{ id = 3; search = 'Adrspach rocks'; file = 'adrspach' },
-  @{ id = 4; search = 'Olomouc Holy Trinity Column'; file = 'olomouc' },
+  @{ id = 4; search = 'Demanovska ice cave'; file = 'ice-cave' },
   @{ id = 5; search = 'Tatralandia aquapark'; file = 'tatralandia' },
-  @{ id = 6; search = 'Demanovska ice cave'; file = 'ice-cave' },
+  @{ id = 6; search = 'Bachledka treetop walk'; file = 'bachledka' },
   @{ id = 7; search = 'Olsovec Jedovnice rybnik'; file = 'jedovnice' },
   @{ id = 8; search = 'Macocha gorge Moravian Karst'; file = 'macocha' }
 )
