@@ -1,13 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { itinerary, getCurrentTripDay, getDateForDay } from '@/lib/itinerary';
 
 const GEMINI_MODEL = 'gemini-2.0-flash';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
-function buildPrompt(lat: number, lng: number, rvHeight: number, rvWeight: number): string {
+/** Where the convoy is supposed to be today, so answers can favour services along the route. */
+function buildItineraryContext(day: number | null): string {
+  if (day === null) return '';
+
+  const stops = itinerary.locations.filter((l) => l.day === day);
+  if (stops.length === 0) return '';
+
+  const campsite = stops.find((l) => l.type === 'campsite');
+  const stopLines = stops
+    .map((l) => `- ${l.name} (${l.type}) at ${l.coords.lat}, ${l.coords.lng}`)
+    .join('\n');
+
+  return `
+Trip context: today is day ${day} of ${itinerary.trip_name} (${getDateForDay(day)}).
+Planned stops for today:
+${stopLines}
+${campsite ? `Tonight's campsite: ${campsite.name} at ${campsite.coords.lat}, ${campsite.coords.lng}.` : "No campsite is booked for tonight."}
+
+Use this to prefer services near today's route and tonight's campsite, and say so if the SOS
+coordinates are far from the planned stops, since that may mean the convoy is off route.
+`;
+}
+
+function buildPrompt(
+  lat: number,
+  lng: number,
+  rvHeight: number,
+  rvWeight: number,
+  day: number | null
+): string {
   return `You are an emergency assistant for an RV convoy traveling through Czechia and Slovakia.
 The convoy consists of two motorhomes (height: ${rvHeight}m, weight: ${rvWeight}t).
 A user has pressed the SOS button from coordinates (${lat}, ${lng}).
-
+${buildItineraryContext(day)}
 Provide the following information:
 1) The nearest hospital with address and phone number.
 2) The nearest auto mechanic or RV service center.
@@ -28,7 +58,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { lat: number; lng: number; rvHeight: number; rvWeight: number };
+  let body: { lat: number; lng: number; rvHeight: number; rvWeight: number; day?: number | null };
   try {
     body = await req.json();
   } catch {
@@ -40,7 +70,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'lat and lng are required numbers' }, { status: 400 });
   }
 
-  const prompt = buildPrompt(lat, lng, rvHeight ?? 3.2, rvWeight ?? 3.5);
+  // The traveller's device is the reliable clock here; the server may sit in another timezone.
+  const day = typeof body.day === 'number' ? body.day : getCurrentTripDay();
+
+  const prompt = buildPrompt(lat, lng, rvHeight ?? 3.2, rvWeight ?? 3.5, day);
 
   try {
     const res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {

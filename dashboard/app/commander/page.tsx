@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { itinerary } from '@/lib/itinerary';
+import { itinerary, getCurrentTripDay } from '@/lib/itinerary';
 import { strings } from '@/lib/strings';
 import PageHeader from '@/components/PageHeader';
 import Reveal from '@/components/ui/Reveal';
@@ -73,6 +73,7 @@ export default function CommanderPage() {
           lng,
           rvHeight: itinerary.rv_specs.height,
           rvWeight: itinerary.rv_specs.weight,
+          day: getCurrentTripDay(),
         }),
       });
 
