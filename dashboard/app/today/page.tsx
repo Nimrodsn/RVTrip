@@ -7,12 +7,7 @@ import { getDayGuide } from '@/lib/dayGuides';
 import { strings } from '@/lib/strings';
 import { TYPE_COLORS, TYPE_EMOJI, type DayNote, type CustomStop, type LocationType } from '@/lib/types';
 import PageHeader from '@/components/PageHeader';
-import DayGuide, {
-  GUIDE_SECTION_IDS,
-  DEFAULT_GUIDE_SECTIONS,
-  type GuideSection,
-  type GuideSectionState,
-} from '@/components/DayGuide';
+import DayGuide from '@/components/DayGuide';
 import EmptyState from '@/components/EmptyState';
 import StopActions from '@/components/StopActions';
 import FilterPills from '@/components/ui/FilterPills';
@@ -20,9 +15,6 @@ import StaggerList from '@/components/ui/StaggerList';
 import Reveal from '@/components/ui/Reveal';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-
-/** One preference for the whole trip, so collapsing a section keeps it collapsed on other days. */
-const GUIDE_SECTIONS_KEY = 'today-guide-sections';
 
 const TYPE_OPTIONS: { key: LocationType; label: string }[] = [
   { key: 'campsite', label: strings.map.campsite },
@@ -43,33 +35,26 @@ export default function TodayPage() {
   const [editingCustomStop, setEditingCustomStop] = useState<{ id: string; name: string; note: string; type: LocationType } | null>(null);
   const [showAddStop, setShowAddStop] = useState(false);
   const [newStop, setNewStop] = useState({ name: '', type: 'attraction' as LocationType, note: '', lat: '', lng: '' });
-  const [openSections, setOpenSections] = useState<GuideSectionState>(DEFAULT_GUIDE_SECTIONS);
+  const [openDays, setOpenDays] = useState<number[]>([selectedDay]);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  useEffect(() => {
-    const stored = localStorage.getItem(GUIDE_SECTIONS_KEY);
-    if (!stored) return;
-    try {
-      setOpenSections({ ...DEFAULT_GUIDE_SECTIONS, ...(JSON.parse(stored) as Partial<GuideSectionState>) });
-    } catch {
-      // A corrupted preference should not break the page; the defaults already stand.
+  /** Picking from the pills reads as "go to this day", so it opens that day alone. */
+  function selectDay(day: number) {
+    setSelectedDay(day);
+    setOpenDays([day]);
+  }
+
+  function toggleDay(day: number) {
+    if (openDays.includes(day)) {
+      setOpenDays(openDays.filter((d) => d !== day));
+      return;
     }
-  }, []);
-
-  function persistSections(next: GuideSectionState) {
-    setOpenSections(next);
-    localStorage.setItem(GUIDE_SECTIONS_KEY, JSON.stringify(next));
-  }
-
-  function toggleGuideSection(section: GuideSection) {
-    persistSections({ ...openSections, [section]: !openSections[section] });
-  }
-
-  function setAllGuideSections(open: boolean) {
-    persistSections(Object.fromEntries(GUIDE_SECTION_IDS.map((id) => [id, open])) as GuideSectionState);
+    // Opening a day also moves the stops list, so what you read and what you see below agree.
+    setSelectedDay(day);
+    setOpenDays([day]);
   }
 
   async function loadData() {
@@ -116,7 +101,9 @@ export default function TodayPage() {
   );
   const dayCustomStops = customStops.filter((s) => s.day === selectedDay);
   const dayCustomNotes = dayNotes.filter((n) => n.day === selectedDay);
-  const dayGuide = getDayGuide(selectedDay);
+  // `?? []` drops any day that has no written guide, so the list follows the itinerary.
+  const dayGuides = days.flatMap((day) => getDayGuide(day) ?? []);
+  const allGuidesOpen = openDays.length === dayGuides.length;
   const isDayEmpty = dayLocations.length === 0 && dayCustomStops.length === 0 && dayCustomNotes.length === 0;
 
   async function saveStopEdit(stopKey: string, name: string, note: string) {
@@ -206,22 +193,46 @@ export default function TodayPage() {
         <FilterPills
           items={days.map((d) => ({ value: d, label: `${d} · ${getDateForDay(d).split(' ')[1]}` }))}
           activeValue={selectedDay}
-          onChange={setSelectedDay}
+          onChange={selectDay}
           layoutId="today-day-pill"
           ariaLabel={strings.today.selectDay}
         />
       </div>
 
-      {/* Day story: read what happens today before scanning the stops */}
-      {dayGuide && (
-        <DayGuide
-          key={selectedDay}
-          guide={dayGuide}
-          openSections={openSections}
-          onToggleSection={toggleGuideSection}
-          onSetAllSections={setAllGuideSections}
-          className="mb-6"
-        />
+      {/* Every day of the trip, collapsed to its header until opened */}
+      {dayGuides.length > 0 && (
+        <div className="mb-6">
+          <div className="mb-3 flex gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setOpenDays(dayGuides.map((guide) => guide.day))}
+              disabled={allGuidesOpen}
+            >
+              {strings.today.expandAll}
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setOpenDays([])}
+              disabled={openDays.length === 0}
+            >
+              {strings.today.collapseAll}
+            </Button>
+          </div>
+
+          <StaggerList className="space-y-3">
+            {dayGuides.map((guide) => (
+              <DayGuide
+                key={guide.day}
+                guide={guide}
+                open={openDays.includes(guide.day)}
+                active={guide.day === selectedDay}
+                onToggle={() => toggleDay(guide.day)}
+              />
+            ))}
+          </StaggerList>
+        </div>
       )}
 
       {/* Toolbar */}
