@@ -12,8 +12,9 @@ function buildItineraryContext(day: number | null): string {
   if (stops.length === 0) return '';
 
   const campsite = stops.find((l) => l.type === 'campsite');
+  // The note carries what the stop actually involves, such as a cave tour or a mountain road.
   const stopLines = stops
-    .map((l) => `- ${l.name} (${l.type}) at ${l.coords.lat}, ${l.coords.lng}`)
+    .map((l) => `- ${l.name} (${l.type}) at ${l.coords.lat}, ${l.coords.lng}${l.note ? ` - ${l.note}` : ''}`)
     .join('\n');
 
   return `
