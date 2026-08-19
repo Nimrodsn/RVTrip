@@ -206,6 +206,8 @@ export const strings = {
     offlineStatus: 'זמינים אופליין',
     offlineUnavailable: 'המסמך הזה לא נשמר למצב אופליין, ואין כרגע חיבור לאינטרנט. כשתהיה רשת אפשר לפתוח אותו וללחוץ על "שמור למצב אופליין".',
     cacheAll: 'שמור הכל אופליין',
+    loadingPdf: 'טוען את המסמך...',
+    pdfFailed: 'לא הצלחנו להציג את המסמך כאן.',
   },
   liveLocation: {
     shareLocation: 'שתף מיקום',

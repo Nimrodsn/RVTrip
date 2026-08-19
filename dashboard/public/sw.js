@@ -20,6 +20,8 @@ const PRECACHE_URLS = [
   '/journal',
   '/commander',
   '/manifest.json',
+  // The pdf.js worker: without it a saved PDF cannot be drawn offline.
+  '/pdf.worker.min.mjs',
   '/icon-192.png',
   '/icon-512.png',
   '/apple-touch-icon.png',
@@ -87,7 +89,7 @@ function isDataAPI(url) {
 
 function isStaticAsset(url) {
   const ext = url.pathname.split('.').pop();
-  return ['js', 'css', 'svg', 'png', 'jpg', 'jpeg', 'webp', 'ico', 'woff', 'woff2'].includes(ext);
+  return ['js', 'mjs', 'css', 'svg', 'png', 'jpg', 'jpeg', 'webp', 'ico', 'woff', 'woff2'].includes(ext);
 }
 
 // Network-first: try network, fall back to cache

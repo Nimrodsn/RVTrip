@@ -6,6 +6,7 @@ import { strings } from '@/lib/strings';
 import type { DocEntry, DocCategory } from '@/lib/types';
 import PageHeader from '@/components/PageHeader';
 import EmptyState from '@/components/EmptyState';
+import PdfViewer from '@/components/PdfViewer';
 import Reveal from '@/components/ui/Reveal';
 import StaggerList from '@/components/ui/StaggerList';
 import Card, { CARD_SURFACE } from '@/components/ui/Card';
@@ -15,7 +16,7 @@ import { cn } from '@/lib/utils';
 
 // #region agent log
 const DBG_KEY = 'debug-cebce8-lines';
-const DBG_BUILD = 'build-cebce8-a';
+const DBG_BUILD = 'build-cebce8-b-pdfjs';
 const DBG_ENDPOINT = 'http://127.0.0.1:7512/ingest/2701576b-3a61-45e1-bc4b-5011d9699a1e';
 let dbgListener: ((lines: string[]) => void) | null = null;
 
@@ -527,13 +528,10 @@ export default function DocumentsPage() {
                 // #endregion
               />
             ) : viewingDoc.mime_type === 'application/pdf' ? (
-              <iframe
+              <PdfViewer
                 src={viewerUrl}
-                className="w-full h-full border-0"
-                title={viewingDoc.name}
                 // #region agent log
-                onLoad={() => dbg('C', 'viewer:iframe', 'pdf iframe load event', { isBlob: viewerUrl.startsWith('blob:'), ua: navigator.userAgent.slice(0, 60) })}
-                onError={() => dbg('C', 'viewer:iframe', 'pdf iframe failed', { isBlob: viewerUrl.startsWith('blob:') })}
+                onStatus={(status, data) => dbg('C', 'viewer:pdfjs', `pdf.js ${status}`, data)}
                 // #endregion
               />
             ) : (
