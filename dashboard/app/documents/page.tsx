@@ -14,34 +14,6 @@ import Button, { buttonClasses } from '@/components/ui/Button';
 import FilterPills from '@/components/ui/FilterPills';
 import { cn } from '@/lib/utils';
 
-// #region agent log
-const DBG_KEY = 'debug-cebce8-lines';
-const DBG_BUILD = 'build-cebce8-b-pdfjs';
-const DBG_ENDPOINT = 'http://127.0.0.1:7512/ingest/2701576b-3a61-45e1-bc4b-5011d9699a1e';
-let dbgListener: ((lines: string[]) => void) | null = null;
-
-function dbg(hypothesisId: string, where: string, message: string, data: Record<string, unknown>) {
-  const stamp = new Date().toISOString().slice(11, 23);
-  const line = `${stamp} [${hypothesisId}] ${message} ${JSON.stringify(data)}`;
-  let lines: string[] = [];
-  try {
-    lines = JSON.parse(localStorage.getItem(DBG_KEY) || '[]') as string[];
-    lines.push(line);
-    lines = lines.slice(-60);
-    localStorage.setItem(DBG_KEY, JSON.stringify(lines));
-  } catch { /* ignore */ }
-  dbgListener?.(lines);
-  const host = typeof window !== 'undefined' ? window.location.hostname : '';
-  if (host === 'localhost' || host === '127.0.0.1') {
-    fetch(DBG_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'cebce8' },
-      body: JSON.stringify({ sessionId: 'cebce8', runId: 'run2', hypothesisId, location: where, message, data, timestamp: Date.now() }),
-    }).catch(() => {});
-  }
-}
-// #endregion
-
 /** Kept from the tickets-only version so files saved before this page handled every category survive. */
 const CACHE_NAME = 'rv-tickets-v1';
 
@@ -143,48 +115,6 @@ export default function DocumentsPage() {
     loadDocs();
   }, []);
 
-  // #region agent log
-  const [dbgLines, setDbgLines] = useState<string[]>([]);
-  useEffect(() => {
-    dbgListener = setDbgLines;
-    try { setDbgLines(JSON.parse(localStorage.getItem(DBG_KEY) || '[]') as string[]); } catch { /* ignore */ }
-
-    const onError = (event: ErrorEvent) =>
-      dbg('B', 'window:error', 'uncaught error', { message: event.message, source: event.filename, line: event.lineno });
-    const onRejection = (event: PromiseRejectionEvent) =>
-      dbg('B', 'window:unhandledrejection', 'promise rejected', { reason: String(event.reason).slice(0, 200) });
-    window.addEventListener('error', onError);
-    window.addEventListener('unhandledrejection', onRejection);
-
-    (async () => {
-      let cacheNames: string[] = [];
-      let docKeys: string[] = [];
-      try {
-        cacheNames = await caches.keys();
-        docKeys = (await (await caches.open(CACHE_NAME)).keys()).map((r) => r.url);
-      } catch (err) { dbg('D', 'mount', 'cache api unavailable', { error: String(err) }); }
-      const snapshot = readCatalog();
-      dbg('A,D', 'mount', 'documents page mounted', {
-        build: DBG_BUILD,
-        online: navigator.onLine,
-        swController: navigator.serviceWorker?.controller?.scriptURL ?? null,
-        cacheNames,
-        docCacheCount: docKeys.length,
-        docCacheSample: docKeys.slice(0, 2),
-        snapshotCount: snapshot.length,
-        firstDocUrl: snapshot[0] ? getPublicUrl(snapshot[0].storage_path) : null,
-        firstDocMime: snapshot[0] ? `${typeof snapshot[0].mime_type}:${String(snapshot[0].mime_type)}` : null,
-      });
-    })();
-
-    return () => {
-      dbgListener = null;
-      window.removeEventListener('error', onError);
-      window.removeEventListener('unhandledrejection', onRejection);
-    };
-  }, []);
-  // #endregion
-
   /** Only place the list changes, so the offline snapshot never drifts from what is on screen. */
   function commitDocs(list: DocEntry[]) {
     setDocs(list);
@@ -283,34 +213,6 @@ export default function DocumentsPage() {
   async function openDocument(doc: DocEntry) {
     const url = getPublicUrl(doc.storage_path);
     const blobUrl = typeof caches !== 'undefined' ? await getCachedBlob(url) : null;
-    // #region agent log
-    const mime = doc.mime_type;
-    let cachedKeys: string[] = [];
-    let stored: Record<string, unknown> = {};
-    try {
-      const cache = await caches.open(CACHE_NAME);
-      const res = await cache.match(url, { ignoreVary: true });
-      if (res) {
-        const blob = await res.blob();
-        stored = { status: res.status, contentType: res.headers.get('content-type'), blobType: blob.type, blobSize: blob.size };
-      } else {
-        cachedKeys = (await cache.keys()).map((r) => r.url).slice(0, 2);
-      }
-    } catch (err) { stored = { error: String(err) }; }
-    dbg('B,C,E,F', 'openDocument', 'open pressed', {
-      build: DBG_BUILD,
-      name: doc.name,
-      mime: `${typeof mime}:${String(mime)}`,
-      branch: typeof mime !== 'string' ? 'CRASH-RISK' : mime.startsWith('image/') ? 'image' : mime === 'application/pdf' ? 'pdf' : 'external-link',
-      gotBlob: !!blobUrl,
-      online: navigator.onLine,
-      willShowUnavailable: !blobUrl && !navigator.onLine,
-      url,
-      cachedKeys,
-      stored,
-      ua: navigator.userAgent.slice(0, 70),
-    });
-    // #endregion
     setViewingDoc(doc);
     setViewerUrl(blobUrl ?? url);
     // Nothing cached and no network: say so instead of opening a frame that cannot load.
@@ -522,18 +424,9 @@ export default function DocumentsPage() {
                 src={viewerUrl}
                 alt={viewingDoc.name}
                 className="max-w-full max-h-full object-contain"
-                // #region agent log
-                onLoad={(e) => dbg('C', 'viewer:img', 'image loaded', { isBlob: viewerUrl.startsWith('blob:'), w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
-                onError={() => dbg('C', 'viewer:img', 'image failed to load', { isBlob: viewerUrl.startsWith('blob:'), online: navigator.onLine })}
-                // #endregion
               />
             ) : viewingDoc.mime_type === 'application/pdf' ? (
-              <PdfViewer
-                src={viewerUrl}
-                // #region agent log
-                onStatus={(status, data) => dbg('C', 'viewer:pdfjs', `pdf.js ${status}`, data)}
-                // #endregion
-              />
+              <PdfViewer src={viewerUrl} />
             ) : (
               <div className="text-center">
                 <p className="text-gray-500 mb-4">{viewingDoc.name}</p>
@@ -551,28 +444,6 @@ export default function DocumentsPage() {
         </div>
       )}
 
-      {/* #region agent log */}
-      <div className="fixed bottom-0 left-0 right-0 z-[60] max-h-[38vh] overflow-auto bg-black/90 p-2 text-[10px] leading-tight text-lime-300" dir="ltr">
-        <div className="mb-1 flex gap-2">
-          <button
-            className="rounded bg-lime-700 px-2 py-1 text-white"
-            onClick={() => navigator.clipboard?.writeText(dbgLines.join('\n'))}
-          >
-            copy log
-          </button>
-          <button
-            className="rounded bg-red-700 px-2 py-1 text-white"
-            onClick={() => { localStorage.removeItem(DBG_KEY); setDbgLines([]); }}
-          >
-            clear
-          </button>
-          <span className="px-2 py-1 text-white">{DBG_BUILD} · {dbgLines.length} lines</span>
-        </div>
-        {dbgLines.map((line, i) => (
-          <div key={i} className="whitespace-pre-wrap break-all border-t border-white/10 py-0.5">{line}</div>
-        ))}
-      </div>
-      {/* #endregion */}
     </div>
   );
 }

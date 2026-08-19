@@ -10,28 +10,23 @@ const MAX_PIXEL_RATIO = 2;
 type Props = {
   /** A blob: URL for a saved copy, or the remote URL when nothing was saved. */
   src: string;
-  onStatus?: (status: string, data: Record<string, unknown>) => void;
 };
 
 /**
  * Draws the pages ourselves instead of handing the file to the browser: Chrome on Android has no
  * built-in PDF viewer, so an iframe or embed shows an empty frame there.
  */
-export default function PdfViewer({ src, onStatus }: Props) {
+export default function PdfViewer({ src }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(true);
-
-  // Held in a ref so a caller that passes an inline callback cannot restart the render loop.
-  const onStatusRef = useRef(onStatus);
-  onStatusRef.current = onStatus;
 
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
       setLoading(true);
-      setError(null);
+      setFailed(false);
       try {
         const pdfjs = await import('pdfjs-dist');
         // Served from public/ and precached by the service worker, so this resolves with no network.
@@ -67,12 +62,10 @@ export default function PdfViewer({ src, onStatus }: Props) {
 
         if (cancelled) return;
         setLoading(false);
-        onStatusRef.current?.('rendered', { pages: doc.numPages, isBlob: src.startsWith('blob:') });
-      } catch (err) {
+      } catch {
         if (cancelled) return;
         setLoading(false);
-        setError(String(err));
-        onStatusRef.current?.('failed', { error: String(err), isBlob: src.startsWith('blob:') });
+        setFailed(true);
       }
     })();
 
@@ -84,7 +77,7 @@ export default function PdfViewer({ src, onStatus }: Props) {
   return (
     <div className="w-full h-full overflow-auto">
       {loading && <p className="py-8 text-center text-sm text-gray-500">{strings.documents.loadingPdf}</p>}
-      {error && (
+      {failed && (
         <div className="py-8 text-center">
           <p className="mb-3 text-sm text-gray-500">{strings.documents.pdfFailed}</p>
           <a href={src} target="_blank" rel="noopener noreferrer" className={buttonClasses({ size: 'sm' })}>
