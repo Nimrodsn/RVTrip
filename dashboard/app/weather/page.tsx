@@ -132,19 +132,11 @@ export default function WeatherPage() {
               const warnings = forecast ? getNightWarnings(forecast) : [];
               return (
                 <Card key={night.day} interactive className="h-full p-5 flex flex-col">
-                  <div className="flex items-baseline justify-between text-xs text-gray-400">
-                    <span className="font-semibold text-primary">
-                      {strings.weather.day} {night.day}
-                    </span>
-                    <span>{night.dateLabel}</span>
-                  </div>
-
-                  <div className="mt-3 text-4xl text-center" aria-hidden>
-                    {forecast ? getWeatherIcon(forecast.weatherCode) : '🗓️'}
-                  </div>
-
-                  <p className="mt-3 text-sm font-semibold text-primary leading-tight">
+                  <h3 className="text-sm font-bold text-primary leading-tight">
                     {night.kind === 'returnDay' ? '📍' : '🏕️'} {night.place}
+                  </h3>
+                  <p className="mt-1 text-xs text-gray-400">
+                    {strings.weather.day} {night.day} · {night.dateLabel}
                   </p>
                   {night.kind === 'secondNight' && (
                     <p className="mt-1 text-[11px] text-gray-400">{strings.weather.secondNight}</p>
@@ -152,6 +144,10 @@ export default function WeatherPage() {
                   {night.kind === 'returnDay' && (
                     <p className="mt-1 text-[11px] text-gray-400">{strings.weather.returnDay}</p>
                   )}
+
+                  <div className="mt-3 text-4xl text-center" aria-hidden>
+                    {forecast ? getWeatherIcon(forecast.weatherCode) : '🗓️'}
+                  </div>
 
                   {forecast ? (
                     <>
