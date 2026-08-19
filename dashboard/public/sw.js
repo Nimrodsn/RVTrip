@@ -16,6 +16,7 @@ const PRECACHE_URLS = [
   '/checklist',
   '/budget',
   '/documents',
+  '/notes',
   '/weather',
   '/journal',
   '/commander',

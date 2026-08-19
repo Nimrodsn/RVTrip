@@ -28,6 +28,7 @@ const quickNav = [
   { href: '/budget', emoji: '💰', label: strings.home.budget },
   { href: '/journal', emoji: '📸', label: strings.home.journal },
   { href: '/documents', emoji: '📎', label: strings.home.documents },
+  { href: '/notes', emoji: '📝', label: strings.home.notes },
   { href: '/checklist', emoji: '✅', label: strings.home.preFlight },
 ];
 

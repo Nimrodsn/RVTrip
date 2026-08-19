@@ -87,6 +87,32 @@ export interface DayNote {
   done: boolean;
 }
 
+export type NoteKind = 'checklist' | 'text';
+export type NoteColor = 'yellow' | 'green' | 'blue' | 'pink' | 'gray';
+
+export interface SharedNote {
+  id: string;
+  kind: NoteKind;
+  title: string;
+  /** Free text body, used when kind is 'text'. */
+  body: string;
+  color: NoteColor;
+  pinned: boolean;
+  /** Which RV wrote it, taken from the stored rv identity. */
+  author: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SharedNoteItem {
+  id: string;
+  note_id: string;
+  text: string;
+  done: boolean;
+  position: number;
+  updated_at: string;
+}
+
 export interface CustomStop {
   id: string;
   day: number;

@@ -146,3 +146,54 @@ create policy "Allow all on rv_checklist" on rv_checklist for all using (true) w
 ALTER TABLE documents DROP CONSTRAINT IF EXISTS documents_category_check;
 ALTER TABLE documents ADD CONSTRAINT documents_category_check
   CHECK (category IN ('flight','insurance','reservation','rental','passport','license','ticket','other'));
+
+-- Shared notes board: shopping lists and free text notes everyone can edit
+create table if not exists shared_notes (
+  id uuid primary key default uuid_generate_v4(),
+  kind text not null default 'checklist' check (kind in ('checklist', 'text')),
+  title text not null default '',
+  body text not null default '',
+  color text not null default 'yellow',
+  pinned boolean not null default false,
+  author text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- One row per line so ticking an item and adding another never overwrite each other
+create table if not exists shared_note_items (
+  id uuid primary key default uuid_generate_v4(),
+  note_id uuid not null references shared_notes (id) on delete cascade,
+  text text not null default '',
+  done boolean not null default false,
+  position integer not null default 0,
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists shared_note_items_note_id_idx on shared_note_items (note_id);
+
+alter table shared_notes enable row level security;
+alter table shared_note_items enable row level security;
+
+drop policy if exists "Allow all on shared_notes" on shared_notes;
+create policy "Allow all on shared_notes" on shared_notes for all using (true) with check (true);
+drop policy if exists "Allow all on shared_note_items" on shared_note_items;
+create policy "Allow all on shared_note_items" on shared_note_items for all using (true) with check (true);
+
+-- Adding a table to the publication twice is an error, so only add what is missing
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'shared_notes'
+  ) then
+    alter publication supabase_realtime add table shared_notes;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'shared_note_items'
+  ) then
+    alter publication supabase_realtime add table shared_note_items;
+  end if;
+end $$;

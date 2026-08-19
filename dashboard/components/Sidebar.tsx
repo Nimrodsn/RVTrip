@@ -16,6 +16,7 @@ const navItems = [
   { href: '/weather', label: 'מזג אוויר', icon: '🌤️' },
   { href: '/budget', label: 'תקציב והוצאות', icon: '💰' },
   { href: '/checklist', label: 'בדיקה לפני יציאה', icon: '✅' },
+  { href: '/notes', label: 'רשימות והערות', icon: '📝' },
   { href: '/commander', label: 'המפקד (AI)', icon: '🤖' },
   { href: '/journal', label: 'יומן תמונות', icon: '📸' },
   { href: '/documents', label: 'מסמכי נסיעה', icon: '📎' },
