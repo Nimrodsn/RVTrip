@@ -285,10 +285,18 @@ export default function DocumentsPage() {
     // #region agent log
     const mime = doc.mime_type;
     let cachedKeys: string[] = [];
-    if (!blobUrl) {
-      try { cachedKeys = (await (await caches.open(CACHE_NAME)).keys()).map((r) => r.url).slice(0, 2); } catch { /* ignore */ }
-    }
-    dbg('B,C,D,E', 'openDocument', 'open pressed', {
+    let stored: Record<string, unknown> = {};
+    try {
+      const cache = await caches.open(CACHE_NAME);
+      const res = await cache.match(url, { ignoreVary: true });
+      if (res) {
+        const blob = await res.blob();
+        stored = { status: res.status, contentType: res.headers.get('content-type'), blobType: blob.type, blobSize: blob.size };
+      } else {
+        cachedKeys = (await cache.keys()).map((r) => r.url).slice(0, 2);
+      }
+    } catch (err) { stored = { error: String(err) }; }
+    dbg('B,C,E,F', 'openDocument', 'open pressed', {
       build: DBG_BUILD,
       name: doc.name,
       mime: `${typeof mime}:${String(mime)}`,
@@ -298,6 +306,8 @@ export default function DocumentsPage() {
       willShowUnavailable: !blobUrl && !navigator.onLine,
       url,
       cachedKeys,
+      stored,
+      ua: navigator.userAgent.slice(0, 70),
     });
     // #endregion
     setViewingDoc(doc);
