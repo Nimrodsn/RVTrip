@@ -202,9 +202,9 @@ export const strings = {
     saveOffline: 'שמור למצב אופליין',
     cached: 'זמין אופליין',
     removeCached: 'הסר מאופליין',
-    viewTicket: 'הצג כרטיס',
-    offlineTickets: 'כרטיסים אופליין',
-    noTickets: 'אין כרטיסים שמורים',
+    view: 'הצג',
+    offlineStatus: 'זמינים אופליין',
+    offlineUnavailable: 'המסמך הזה לא נשמר למצב אופליין, ואין כרגע חיבור לאינטרנט. כשתהיה רשת אפשר לפתוח אותו וללחוץ על "שמור למצב אופליין".',
     cacheAll: 'שמור הכל אופליין',
   },
   liveLocation: {

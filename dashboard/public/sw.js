@@ -2,8 +2,10 @@ const APP_SHELL_CACHE = 'rv-app-shell-v2';
 const DATA_CACHE = 'rv-data-v1';
 const MAP_CACHE = 'rv-map-tiles-v1';
 const FONT_CACHE = 'rv-fonts-v1';
+// Written by the documents page. The name predates it holding every category, not just tickets.
+const DOC_CACHE = 'rv-tickets-v1';
 
-const CURRENT_CACHES = [APP_SHELL_CACHE, DATA_CACHE, MAP_CACHE, FONT_CACHE];
+const CURRENT_CACHES = [APP_SHELL_CACHE, DATA_CACHE, MAP_CACHE, FONT_CACHE, DOC_CACHE];
 
 const MAP_TILE_LIMIT = 2000;
 
@@ -40,7 +42,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((k) => !CURRENT_CACHES.includes(k) && k !== 'rv-tickets-v1')
+          .filter((k) => !CURRENT_CACHES.includes(k))
           .map((k) => caches.delete(k))
       )
     )
@@ -65,6 +67,10 @@ function isFont(url) {
 
 function isSupabaseAPI(url) {
   return url.hostname.includes('supabase.co') && url.pathname.includes('/rest/');
+}
+
+function isSupabaseStorage(url) {
+  return url.hostname.includes('supabase.co') && url.pathname.includes('/storage/');
 }
 
 function isWeatherAPI(url) {
@@ -115,6 +121,22 @@ async function cacheFirst(request, cacheName) {
         trimCache(MAP_CACHE, MAP_TILE_LIMIT);
       }
     }
+    return response;
+  } catch {
+    return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+  }
+}
+
+// Saved documents: always prefer the copy the documents page stored, so a passport or ticket
+// opens with no network. ignoreVary because that copy was fetched with different request headers.
+async function documentCacheFirst(request) {
+  const cache = await caches.open(DOC_CACHE);
+  const cached = await cache.match(request, { ignoreVary: true });
+  if (cached) return cached;
+
+  try {
+    const response = await fetch(request);
+    if (response.ok) cache.put(request, response.clone());
     return response;
   } catch {
     return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
@@ -177,6 +199,13 @@ self.addEventListener('fetch', (event) => {
   // Supabase / Weather / Exchange rate APIs: network-first
   if (isDataAPI(url)) {
     event.respondWith(networkFirst(event.request, DATA_CACHE));
+    return;
+  }
+
+  // Saved documents: cache-first, and ahead of the static-asset branch below, which would
+  // otherwise swallow image documents and fail on them offline.
+  if (isSupabaseStorage(url)) {
+    event.respondWith(documentCacheFirst(event.request));
     return;
   }
 

@@ -11,10 +11,30 @@ import StaggerList from '@/components/ui/StaggerList';
 import Card, { CARD_SURFACE } from '@/components/ui/Card';
 import Button, { buttonClasses } from '@/components/ui/Button';
 import FilterPills from '@/components/ui/FilterPills';
-import AccordionSection from '@/components/ui/AccordionSection';
 import { cn } from '@/lib/utils';
 
+/** Kept from the tickets-only version so files saved before this page handled every category survive. */
 const CACHE_NAME = 'rv-tickets-v1';
+
+/** Snapshot of the Supabase rows, so the list still renders when the API cannot be reached. */
+const CATALOG_KEY = 'rv-documents-catalog';
+
+function readCatalog(): DocEntry[] {
+  try {
+    const raw = localStorage.getItem(CATALOG_KEY);
+    return raw ? (JSON.parse(raw) as DocEntry[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeCatalog(docs: DocEntry[]): void {
+  try {
+    localStorage.setItem(CATALOG_KEY, JSON.stringify(docs));
+  } catch {
+    // Storage full or blocked. The cached files themselves are unaffected.
+  }
+}
 
 async function cacheDocument(url: string): Promise<void> {
   const cache = await caches.open(CACHE_NAME);
@@ -24,7 +44,9 @@ async function cacheDocument(url: string): Promise<void> {
 
 async function getCachedBlob(url: string): Promise<string | null> {
   const cache = await caches.open(CACHE_NAME);
-  const res = await cache.match(url);
+  // ignoreVary: the stored response came from a cross-origin fetch, so its Vary headers
+  // must not decide whether we can reuse it later.
+  const res = await cache.match(url, { ignoreVary: true });
   if (!res) return null;
   const blob = await res.blob();
   return URL.createObjectURL(blob);
@@ -37,7 +59,7 @@ async function removeCachedDocument(url: string): Promise<void> {
 
 async function checkCached(url: string): Promise<boolean> {
   const cache = await caches.open(CACHE_NAME);
-  const res = await cache.match(url);
+  const res = await cache.match(url, { ignoreVary: true });
   return !!res;
 }
 
@@ -70,8 +92,9 @@ export default function DocumentsPage() {
 
   const [cachedUrls, setCachedUrls] = useState<Set<string>>(new Set());
   const [cachingUrl, setCachingUrl] = useState<string | null>(null);
-  const [viewingTicket, setViewingTicket] = useState<DocEntry | null>(null);
-  const [ticketBlobUrl, setTicketBlobUrl] = useState<string | null>(null);
+  const [viewingDoc, setViewingDoc] = useState<DocEntry | null>(null);
+  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
+  const [viewerUnavailable, setViewerUnavailable] = useState(false);
 
   function getPublicUrl(path: string) {
     return supabase.storage.from('documents').getPublicUrl(path).data.publicUrl;
@@ -91,13 +114,26 @@ export default function DocumentsPage() {
     loadDocs();
   }, []);
 
+  /** Only place the list changes, so the offline snapshot never drifts from what is on screen. */
+  function commitDocs(list: DocEntry[]) {
+    setDocs(list);
+    writeCatalog(list);
+  }
+
   async function loadDocs() {
-    const { data } = await supabase.from('documents').select('*').order('timestamp', { ascending: false });
-    if (data) {
-      const list = data as DocEntry[];
-      setDocs(list);
-      refreshCacheStatus(list);
+    const snapshot = readCatalog();
+    if (snapshot.length > 0) {
+      setDocs(snapshot);
+      refreshCacheStatus(snapshot);
     }
+
+    const { data, error } = await supabase.from('documents').select('*').order('timestamp', { ascending: false });
+    // Offline this request simply fails, and the snapshot above is everything we have.
+    if (error || !data) return;
+
+    const list = data as DocEntry[];
+    commitDocs(list);
+    refreshCacheStatus(list);
   }
 
   async function uploadDoc() {
@@ -127,8 +163,11 @@ export default function DocumentsPage() {
       .single();
 
     if (data) {
-      const newDocs = [data as DocEntry, ...docs];
-      setDocs(newDocs);
+      const newDoc = data as DocEntry;
+      commitDocs([newDoc, ...docs]);
+      // Cache straight away: the file is already on this device, so an upload should not
+      // need a second tap to become usable without a network.
+      await handleCache(newDoc);
     }
     setForm({ note: '', category: 'other' });
     setFile(null);
@@ -141,8 +180,7 @@ export default function DocumentsPage() {
     if (typeof caches !== 'undefined') await removeCachedDocument(url);
     await supabase.storage.from('documents').remove([doc.storage_path]);
     await supabase.from('documents').delete().eq('id', doc.id);
-    const newDocs = docs.filter((d) => d.id !== doc.id);
-    setDocs(newDocs);
+    commitDocs(docs.filter((d) => d.id !== doc.id));
     setCachedUrls((prev) => { const next = new Set(prev); next.delete(url); return next; });
   }
 
@@ -165,41 +203,48 @@ export default function DocumentsPage() {
   }
 
   async function handleCacheAll() {
-    const tickets = docs.filter((d) => d.category === 'ticket');
-    for (const doc of tickets) {
+    for (const doc of docs) {
+      if (cachedUrls.has(getPublicUrl(doc.storage_path))) continue;
       await handleCache(doc);
     }
   }
 
-  async function openTicketViewer(doc: DocEntry) {
+  async function openDocument(doc: DocEntry) {
     const url = getPublicUrl(doc.storage_path);
-    setViewingTicket(doc);
-    const blobUrl = await getCachedBlob(url);
-    if (blobUrl) {
-      setTicketBlobUrl(blobUrl);
-    } else {
-      setTicketBlobUrl(url);
-    }
+    const blobUrl = typeof caches !== 'undefined' ? await getCachedBlob(url) : null;
+    setViewingDoc(doc);
+    setViewerUrl(blobUrl ?? url);
+    // Nothing cached and no network: say so instead of opening a frame that cannot load.
+    setViewerUnavailable(!blobUrl && !navigator.onLine);
   }
 
   function closeViewer() {
-    if (ticketBlobUrl && ticketBlobUrl.startsWith('blob:')) URL.revokeObjectURL(ticketBlobUrl);
-    setViewingTicket(null);
-    setTicketBlobUrl(null);
+    if (viewerUrl && viewerUrl.startsWith('blob:')) URL.revokeObjectURL(viewerUrl);
+    setViewingDoc(null);
+    setViewerUrl(null);
+    setViewerUnavailable(false);
   }
 
   const filtered = filterCat ? docs.filter((d) => d.category === filterCat) : docs;
-  const ticketDocs = docs.filter((d) => d.category === 'ticket');
+  const cachedCount = docs.filter((d) => cachedUrls.has(getPublicUrl(d.storage_path))).length;
 
   return (
     <div className="p-4 sm:p-8 max-w-5xl mx-auto">
       <div className="mb-6">
         <PageHeader
           title={strings.documents.title}
+          meta={docs.length > 0 ? `${cachedCount}/${docs.length} ${strings.documents.offlineStatus}` : undefined}
           action={
-            <Button onClick={() => setShowForm(!showForm)}>
-              {showForm ? strings.documents.cancel : strings.documents.addDocument}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              {cachedCount < docs.length && (
+                <Button variant="warning" onClick={handleCacheAll} disabled={!!cachingUrl}>
+                  {cachingUrl ? '...' : strings.documents.cacheAll}
+                </Button>
+              )}
+              <Button onClick={() => setShowForm(!showForm)}>
+                {showForm ? strings.documents.cancel : strings.documents.addDocument}
+              </Button>
+            </div>
           }
         />
       </div>
@@ -245,71 +290,6 @@ export default function DocumentsPage() {
             {uploading ? 'מעלה...' : strings.documents.save}
           </Button>
         </Reveal>
-      )}
-
-      {/* Quick Tickets Banner */}
-      {ticketDocs.length > 0 && (
-        <AccordionSection
-          defaultOpen
-          className="mb-6 border-2 border-amber-200 bg-amber-50"
-          contentClassName="border-amber-200"
-          title={<span className="text-amber-900">🎫 {strings.documents.offlineTickets}</span>}
-          meta={<span className="text-xs font-medium text-amber-700">{ticketDocs.length}</span>}
-        >
-          <div className="mb-3 flex justify-end">
-            <Button
-              size="sm"
-              onClick={handleCacheAll}
-              className="bg-amber-200 text-amber-800 hover:bg-amber-300"
-            >
-              {strings.documents.cacheAll}
-            </Button>
-          </div>
-          <div className="space-y-2">
-            {ticketDocs.map((doc) => {
-              const url = getPublicUrl(doc.storage_path);
-              const isCached = cachedUrls.has(url);
-              const isCaching = cachingUrl === url;
-              return (
-                <div
-                  key={doc.id}
-                  className="flex items-center gap-3 p-3 bg-white rounded-lg border border-amber-100"
-                >
-                  <span
-                    className={`w-3 h-3 rounded-full shrink-0 ${
-                      isCached ? 'bg-green-500 animate-pulse' : 'bg-gray-300'
-                    }`}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-primary truncate">{doc.name}</p>
-                    {isCached && (
-                      <span className="text-[10px] font-medium text-green-600">{strings.documents.cached}</span>
-                    )}
-                  </div>
-                  <div className="flex gap-2 shrink-0">
-                    {!isCached && (
-                      <Button
-                        size="sm"
-                        onClick={() => handleCache(doc)}
-                        disabled={isCaching}
-                        className="bg-amber-100 text-amber-700 hover:bg-amber-200"
-                      >
-                        {isCaching ? '...' : strings.documents.saveOffline}
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      onClick={() => openTicketViewer(doc)}
-                      className="bg-blue-600 text-white hover:bg-blue-700"
-                    >
-                      {strings.documents.viewTicket}
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </AccordionSection>
       )}
 
       {/* Category Filter Tabs */}
@@ -383,26 +363,14 @@ export default function DocumentsPage() {
                       {strings.documents.removeCached}
                     </Button>
                   )}
-                  {doc.category === 'ticket' && (
-                    <Button
-                      size="sm"
-                      onClick={() => openTicketViewer(doc)}
-                      className="bg-blue-600 text-white hover:bg-blue-700"
-                    >
-                      {strings.documents.viewTicket}
-                    </Button>
-                  )}
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={buttonClasses({
-                      size: 'sm',
-                      className: 'bg-blue-50 text-blue-600 hover:bg-blue-100',
-                    })}
+                  {/* Always the in-app viewer: it reads the cached copy first, so it works with no network. */}
+                  <Button
+                    size="sm"
+                    onClick={() => openDocument(doc)}
+                    className="bg-blue-600 text-white hover:bg-blue-700"
                   >
-                    {strings.documents.open} ↗
-                  </a>
+                    {strings.documents.view}
+                  </Button>
                   <Button
                     size="sm"
                     onClick={() => deleteDoc(doc)}
@@ -417,15 +385,17 @@ export default function DocumentsPage() {
         </StaggerList>
       )}
 
-      {/* Full-Screen Ticket Viewer Overlay */}
-      {viewingTicket && ticketBlobUrl && (
+      {/* Full-Screen Document Viewer Overlay */}
+      {viewingDoc && viewerUrl && (
         <div className="fixed inset-0 z-50 bg-white flex flex-col">
           <div className="flex items-center justify-between p-4 border-b border-gray-200 shrink-0">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">🎫</span>
+              <span className="text-2xl">
+                {DOC_CATEGORIES.find((c) => c.key === viewingDoc.category)?.emoji || '📄'}
+              </span>
               <div>
-                <p className="font-bold text-primary text-sm">{viewingTicket.name}</p>
-                {cachedUrls.has(getPublicUrl(viewingTicket.storage_path)) && (
+                <p className="font-bold text-primary text-sm">{viewingDoc.name}</p>
+                {cachedUrls.has(getPublicUrl(viewingDoc.storage_path)) && (
                   <span className="flex items-center gap-1 text-[10px] font-medium text-green-600">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                     {strings.documents.cached}
@@ -441,27 +411,33 @@ export default function DocumentsPage() {
             </button>
           </div>
           <div className="flex-1 flex items-center justify-center overflow-auto p-4 bg-gray-50">
-            {viewingTicket.mime_type.startsWith('image/') ? (
+            {viewerUnavailable ? (
+              <div className="max-w-sm text-center">
+                <p className="text-4xl mb-3">📡</p>
+                <p className="text-sm font-semibold text-primary mb-1">{viewingDoc.name}</p>
+                <p className="text-sm text-gray-500">{strings.documents.offlineUnavailable}</p>
+              </div>
+            ) : viewingDoc.mime_type.startsWith('image/') ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={ticketBlobUrl}
-                alt={viewingTicket.name}
+                src={viewerUrl}
+                alt={viewingDoc.name}
                 className="max-w-full max-h-full object-contain"
               />
-            ) : viewingTicket.mime_type === 'application/pdf' ? (
+            ) : viewingDoc.mime_type === 'application/pdf' ? (
               <iframe
-                src={ticketBlobUrl}
+                src={viewerUrl}
                 className="w-full h-full border-0"
-                title={viewingTicket.name}
+                title={viewingDoc.name}
               />
             ) : (
               <div className="text-center">
-                <p className="text-gray-500 mb-4">{viewingTicket.name}</p>
+                <p className="text-gray-500 mb-4">{viewingDoc.name}</p>
                 <a
-                  href={ticketBlobUrl}
+                  href={viewerUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  className={buttonClasses({ size: 'lg' })}
                 >
                   {strings.documents.open} ↗
                 </a>
