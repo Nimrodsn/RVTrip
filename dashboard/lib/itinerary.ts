@@ -1,4 +1,4 @@
-import type { Itinerary } from './types';
+import type { Itinerary, ItineraryLocation } from './types';
 
 export const itinerary: Itinerary = {
   trip_name: "Czechia-Slovakia RV Convoy 2026",
@@ -38,6 +38,42 @@ export function getDateForDay(day: number): string {
   const mm = base.getMonth() + 1;
   const weekday = base.toLocaleDateString('he-IL', { weekday: 'short' });
   return `${weekday} ${dd}.${mm}`;
+}
+
+/** Calendar date of a trip day as YYYY-MM-DD, the form the weather series is keyed by. */
+export function getIsoDateForDay(day: number): string {
+  const base = new Date(itinerary.start_date);
+  base.setDate(base.getDate() + day - 1);
+  const mm = String(base.getMonth() + 1).padStart(2, '0');
+  const dd = String(base.getDate()).padStart(2, '0');
+  return `${base.getFullYear()}-${mm}-${dd}`;
+}
+
+export type NightStopKind = 'campsite' | 'secondNight' | 'returnDay';
+
+export interface NightStop {
+  location: ItineraryLocation;
+  kind: NightStopKind;
+}
+
+/**
+ * Where the convoy sleeps at the end of a day. Some days have no campsite of their own: day 5 is a
+ * second night at the day 4 campsite, and the last day ends with the RV handed back, so it falls
+ * back to that day's attraction just to have a place to report the weather for.
+ */
+export function getNightStopForDay(day: number): NightStop | null {
+  const ownCampsite = itinerary.locations.find((l) => l.day === day && l.type === 'campsite');
+  if (ownCampsite) return { location: ownCampsite, kind: 'campsite' };
+
+  const isLastDay = day >= days[days.length - 1];
+  if (!isLastDay) {
+    const earlier = itinerary.locations.filter((l) => l.day < day && l.type === 'campsite');
+    const previous = earlier[earlier.length - 1];
+    if (previous) return { location: previous, kind: 'secondNight' };
+  }
+
+  const attraction = itinerary.locations.find((l) => l.day === day && l.type === 'attraction');
+  return attraction ? { location: attraction, kind: 'returnDay' } : null;
 }
 
 /** Trip day matching the real calendar date, or null when today falls outside the trip. */
